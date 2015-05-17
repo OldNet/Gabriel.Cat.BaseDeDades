@@ -14,9 +14,9 @@ using System.IO;
 namespace Gabriel.Cat
 {
 	/// <summary>
-	/// Description of Convertir.
+	/// Description of Convertir.No funciona...por falta de dll
 	/// </summary>
-	public static class Convertir
+	internal static class Convertir
 	{
 		public static DataSet ExcelToDataSet(string pathExcel)
 		{
