@@ -16,7 +16,7 @@ namespace Gabriel.Cat
 	/// <summary>
 	/// Description of Convertir.No funciona...por falta de dll
 	/// </summary>
-	internal static class Convertir
+	/*internal static class Convertir
 	{
 		public static DataSet ExcelToDataSet(string pathExcel)
 		{
@@ -98,5 +98,5 @@ namespace Gabriel.Cat
 		}
 		#endregion
 		
-	}
+	}*/
 }
