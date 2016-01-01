@@ -10,8 +10,9 @@ using System.Windows.Forms;
 using Gabriel.Cat.Extension;
 namespace Gabriel.Cat
 {
+    //hacer version para Wpf
     public partial class VisualitzaTaula : UserControl
-    {//por probar
+    {
         BaseDeDades baseDades;
         string nomTaulaActual;
 
