@@ -72,9 +72,18 @@
     <Compile Include="ObjecteSql.cs" />
     <Compile Include="ObjecteSqlIdAuto.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VisualitzaTaula.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="VisualitzaTaula.Designer.cs">
+      <DependentUpon>VisualitzaTaula.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Convertir" />
+    <EmbeddedResource Include="VisualitzaTaula.resx">
+      <DependentUpon>VisualitzaTaula.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
