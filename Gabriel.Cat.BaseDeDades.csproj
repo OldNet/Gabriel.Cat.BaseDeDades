@@ -6,7 +6,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
-    <RootNamespace>Gabriel.Cat</RootNamespace>
+    <RootNamespace>Gabriel.Cat.BaseDeDades</RootNamespace>
     <AssemblyName>Gabriel.Cat.BaseDeDades</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -65,6 +65,7 @@
     <Compile Include="BaseDeDades.cs" />
     <Compile Include="BaseDeDadesAcces.cs" />
     <Compile Include="BaseDeDadesMySQL.cs" />
+    <Compile Include="BaseDeDatos XML\Tabla.cs" />
     <Compile Include="ControlObjectesSql.cs" />
     <Compile Include="Convertir\Convertir.cs" />
     <Compile Include="ObjecteSql.cs" />
