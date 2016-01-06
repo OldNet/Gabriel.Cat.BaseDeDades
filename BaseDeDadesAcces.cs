@@ -10,10 +10,11 @@ namespace Gabriel.Cat
 {
     public class BaseDeDadesAcces : BaseDeDades
     {
+        static readonly string missatgeErrorPrimaryKeyDuplicated = "Los cambios solicitados en la tabla no se realizaron correctamente porque crearían valores duplicados en el índice, clave principal o relación. Cambie los datos en el campo o los campos que contienen datos duplicados, quite el índice o vuelva a definirlo para permitir entradas duplicadas e inténtelo de nuevo.";
+
         OleDbConnection cnOleDb;
         Semaphore semafor;
-        static string missatgeErrorPrimaryKeyDuplicated = "Los cambios solicitados en la tabla no se realizaron correctamente porque crearían valores duplicados en el índice, clave principal o relación. Cambie los datos en el campo o los campos que contienen datos duplicados, quite el índice o vuelva a definirlo para permitir entradas duplicadas e inténtelo de nuevo.";
-        public static bool AutoCrearBDSiNoEsta = true;
+
         public BaseDeDadesAcces()
         {
 
@@ -24,103 +25,44 @@ namespace Gabriel.Cat
 
         public override bool Conecta()
         {
-            semafor.WaitOne();
             bool conectat = true;
+            semafor.WaitOne();
+            
             try
             {
                 cnOleDb = new OleDbConnection(connectionString);
                 if (!File.Exists(cnOleDb.DataSource))
                 {
-                /*    if (AutoCrearBDSiNoEsta)
-                    {
-                        CreaBD(cnOleDb.DataSource, cnOleDb.Provider);
-                        
-                    }
-                    else*/ //por arreglar!!
-                        throw new Exception("No es pot conectar amb la base de dades per que no existix :" + cnOleDb.DataSource);
-
+                    throw new Exception("No es pot conectar amb la base de dades per que no existix :" + cnOleDb.DataSource);
                 }
                 cnOleDb.Open();
-              
+
             }
             catch { conectat = false; }
-            semafor.Release();
+            finally
+            {
+                semafor.Release();
+            }
             return conectat;
 
 
 
         }
 
-		#region implemented abstract members of BaseDeDades
+        #region implemented abstract members of BaseDeDades
 
 
-		public override TipusBaseDeDades TipusBD {
-			get {
-				return TipusBaseDeDades.Acces;
-			}
-		}
-
-
-		#endregion
-
-#region porArreglarArchivoBD
-/*
-        private void CreaBD(string path, string proveidorBD)
+        public override TipusBaseDeDades TipusBD
         {
-            string fitxer = Path.GetFileName(path);
-            text directori = Path.GetFullPath(path);
-            directori.Replace(fitxer, "");
-            CreaDirectori(directori);
-            if (fitxer.Contains('.'))
-                switch (fitxer.Split('.')[1])
-                {
-                    //mirar si el proveedorDB es el correcto si no lo es se tiene que cambiar...
-                    case "mdb":
-                        //UnZip(path, Estoc.Recursos.);
-                        break;
-                    case "accdb":
-                        //saco el fixero de recursos
-                        UnZip(path,Estoc.Recursos.bdd_accdb);
-                        break;
-
-                }
-  
+            get
+            {
+                return TipusBaseDeDades.Acces;
+            }
         }
 
 
-        private static void UnZip(string path,byte[] recursZip)
-        {
-            var fsZip = new FileStream("temp.zip", FileMode.Create, FileAccess.Write);
-            var bwZip = new BinaryWriter(fsZip);
-            bwZip.Write(recursZip);
-            bwZip.Close();
-            fsZip.Close();
-            var options = new Ionic.Zip.ReadOptions {StatusMessageWriter = System.Console.Out };
-            using (Ionic.Zip.ZipFile zip = Ionic.Zip.ZipFile.Read("temp.zip", options))
-            {
-                zip.FlattenFoldersOnExtract = false;
-                zip.ExtractAll(path,Ionic.Zip.ExtractExistingFileAction.OverwriteSilently); 
-            }
-            //elimino el fixeroTemp
-            File.Delete("temp.zip");
-            string pathParent = new DirectoryInfo(path).Parent.FullName;
-            new DirectoryInfo(path).MoveTo(pathParent + "\\temp");
-            foreach (FileInfo file in new DirectoryInfo(pathParent + "\\temp").GetFiles())
-            {
-
-                file.MoveTo(pathParent+"\\"+Path.GetFileName(path));
-
-            }
-            Directory.Delete(pathParent + "\\temp");
-        }
-
-        private void CreaDirectori(string directori)
-        {
-            DirectoryInfo dir = new DirectoryInfo(directori);
-            if (!Directory.Exists(dir.FullName))
-                Directory.CreateDirectory(dir.FullName);
-        }*/
         #endregion
+
         public override void Desconecta()
         {
             semafor.WaitOne();
@@ -170,18 +112,21 @@ namespace Gabriel.Cat
 
         public override string[,] ConsultaTableDirect(string nomTaula)
         {
+            OleDbDataReader reader;
+            OleDbCommand comand;
+            string[] campos;
             semafor.WaitOne();
             ComprovaConnexio();
-            OleDbCommand comand = cnOleDb.CreateCommand();
-            string[] campos = null;
+            comand = cnOleDb.CreateCommand();
+            campos = null;
             comand.CommandType = CommandType.TableDirect;
             comand.CommandText = nomTaula;
-            System.Collections.Generic.List<string[]> llistaTaula = null;
-            string[,] taula=new string[0,0];
+            List<string[]> llistaTaula = null;
+            string[,] taula = new string[0, 0];
             try
             {
-                OleDbDataReader reader = comand.ExecuteReader();
-                llistaTaula = new System.Collections.Generic.List<string[]>();
+                reader = comand.ExecuteReader();
+                llistaTaula = new List<string[]>();
                 //poso el nom de les columnes
                 campos = new string[reader.FieldCount];
                 for (int i = 0; i < campos.Length; i++)
@@ -197,28 +142,31 @@ namespace Gabriel.Cat
                 }
 
                 reader.Close();
-/// <summary>
-/// Pone los valores en la matriz en su sitio
-/// </summary>
-                taula=new string[llistaTaula.Count,llistaTaula[0].Length];
-                for(int y=0;y<llistaTaula.Count;y++)
-                	for(int x=0;x<llistaTaula[0].Length;x++)
-                		taula[y,x]=llistaTaula[y][x];
+                /// <summary>
+                /// Pone los valores en la matriz en su sitio
+                /// </summary>
+                taula = new string[llistaTaula.Count, llistaTaula[0].Length];
+                for (int y = 0; y < llistaTaula.Count; y++)
+                    for (int x = 0; x < llistaTaula[0].Length; x++)
+                        taula[y, x] = llistaTaula[y][x];
             }
             catch { }
-            semafor.Release();
-
+            finally
+            {
+                semafor.Release();
+            }
             return taula;
         }
 
-        public override void ConsultaSQL(string SQL)
+        public override void ConsultaSQL(string sql)
         {
+            OleDbCommand comand;
             semafor.WaitOne();
             ComprovaConnexio();
             if (EstaConectada)
             {
-                var comand = cnOleDb.CreateCommand();
-                comand.CommandText = SQL;
+                comand = cnOleDb.CreateCommand();
+                comand.CommandText = sql;
                 comand.CommandType = CommandType.Text;
                 try
                 {
@@ -226,7 +174,7 @@ namespace Gabriel.Cat
                 }
                 catch (Exception m)
                 {
-                    if (m.Message.ToString() == missatgeErrorPrimaryKeyDuplicated&&((text)SQL).CountSubString("pdate")>0)
+                    if (m.Message.ToString() == missatgeErrorPrimaryKeyDuplicated && sql.Contains("pdate"))
                     {
                         semafor.Release();
                         throw new BDException("PrimaryKey is duplicated");
@@ -241,16 +189,18 @@ namespace Gabriel.Cat
         {
             if (!EstaConectada)
             {
-                Conecta(); if (!EstaConectada) throw new BDException("No es pot establir connexió amb la BD"); 
+                Conecta();
+                if (!EstaConectada)
+                    throw new BDException("No es pot establir connexió amb la BD");
             }
         }
 
 
 
-        public override System.Collections.Generic.List<string[]> ConsultaStoredProcedure(string nomProcediment, List<Parametre> parametres)
+        public override string[,] ConsultaStoredProcedure(string nomProcediment, IEnumerable<Parametre> parametres)
         {
             //no en te
-            return null;
+            return new string[0,0];
         }
 
         public override bool EstaConectada
@@ -261,9 +211,10 @@ namespace Gabriel.Cat
         public override bool ConsultaSiEsPot(string sql)
         {
             bool esPot = false;
+            OleDbCommand comand;
             semafor.WaitOne();
             ComprovaConnexio();
-            var comand = cnOleDb.CreateCommand();
+            comand = cnOleDb.CreateCommand();
             comand.CommandText = sql;
             comand.CommandType = CommandType.Text;
             try
@@ -271,8 +222,11 @@ namespace Gabriel.Cat
                 esPot = comand.ExecuteReader().FieldCount != 0;//da un numero que es el resultado de una funcion
             }
             catch { }
+            finally
+            {
 
-            semafor.Release();
+                semafor.Release();
+            }
             return esPot;
 
         }
@@ -280,16 +234,17 @@ namespace Gabriel.Cat
         public override bool ConsultaSiExisteix(string sql)
         {
             bool existeix = false;
+            OleDbCommand comand;
+            OleDbDataReader tablaConsulta;
             semafor.WaitOne();
             ComprovaConnexio();
-            var comand = cnOleDb.CreateCommand();
+            comand = cnOleDb.CreateCommand();
             comand.CommandText = sql;
             comand.CommandType = CommandType.Text;
             try
             {
-
-                var r= comand.ExecuteReader();
-                existeix = r.HasRows;
+                tablaConsulta = comand.ExecuteReader();
+                existeix = tablaConsulta.HasRows;
             }
             catch { }
             finally
@@ -301,17 +256,18 @@ namespace Gabriel.Cat
 
         public override string ConsultaUltimID()
         {
-   
+
             string id = null;
+            OleDbCommand comand;
             semafor.WaitOne();
             ComprovaConnexio();
-            var comand = cnOleDb.CreateCommand();
+            comand = cnOleDb.CreateCommand();
             comand.CommandText = "Select @@Identity";
             comand.CommandType = CommandType.Text;
             try
             {
-              
-                    id = (int)comand.ExecuteScalar()+"";
+
+                id = (int)comand.ExecuteScalar() + "";
             }
             catch { }
             finally

@@ -25,7 +25,7 @@ namespace Gabriel.Cat
 	{
 
 		public event ObjecteNouEventHandler ObjNou;
-		SortedList<ulong, ObjecteSql> controlObj;
+		LlistaOrdenada<ulong, ObjecteSql> controlObj;
 		private BaseDeDades baseDeDades;
 		System.Timers.Timer temporitzadorActualitzacions;
 		Semaphore semaforActualitzacions;
@@ -34,7 +34,7 @@ namespace Gabriel.Cat
 		{
 			this.baseDeDades = baseDeDades;
 			baseDeDades.Conecta();
-			controlObj = new SortedList<ulong, ObjecteSql>();
+			controlObj = new LlistaOrdenada<ulong, ObjecteSql>();
 			temporitzadorActualitzacions = new System.Timers.Timer();
 			temporitzadorActualitzacions.Interval = (int)TempsEnMiliSegons.hora;
 			temporitzadorActualitzacions.Enabled = true;
@@ -69,7 +69,7 @@ namespace Gabriel.Cat
 		public void Afegir(ObjecteSql objSql)
 		{
 			if (objSql != null)
-			if (!controlObj.ContainsKey(objSql.IdIntern)) {
+			if (!controlObj.Existeix(objSql.IdIntern)) {
 				try {
 					baseDeDades.ConsultaSQL(objSql.StringInsertSql(baseDeDades.TipusBD));//si peta no lo pone...
 					if (objSql is ObjecteSqlIdAuto) {
@@ -79,9 +79,9 @@ namespace Gabriel.Cat
 
 				} catch {
 				} finally {
-					if (!controlObj.ContainsKey(objSql.IdIntern)) {
+					if (!controlObj.Existeix(objSql.IdIntern)) {
 						semaforActualitzacions.WaitOne();
-						controlObj.Add(objSql.IdIntern, objSql);
+						controlObj.Afegir(objSql.IdIntern, objSql);
 						semaforActualitzacions.Release();
 						try {
 							objSql.Baixa += Treu;
@@ -114,15 +114,13 @@ namespace Gabriel.Cat
 		}
 		public void Treu(ulong idInternObjSql)
 		{
-			if (controlObj.ContainsKey(idInternObjSql)) {
+			if (controlObj.Existeix(idInternObjSql)) {
 				try {
 					baseDeDades.ConsultaSQL(controlObj[idInternObjSql].StringDeleteSql());//elimina de la base de dades,si peta no el treu...
 					controlObj[idInternObjSql].Baixa -= new ObjecteSqlEventHandler(Treu);
 					controlObj[idInternObjSql].Actualitzat -= ComprovaActualitzacions;
 					controlObj[idInternObjSql].Alta += new ObjecteSqlEventHandler(Afegir);
-					semaforActualitzacions.WaitOne();
-					controlObj.Remove(idInternObjSql);
-					semaforActualitzacions.Release();
+				    controlObj.Elimina(idInternObjSql);
 				} catch {
 				}
 
@@ -132,7 +130,7 @@ namespace Gabriel.Cat
 		private void ComprovaActualitzacionsEvent(object sender, System.Timers.ElapsedEventArgs e)
 		{
 			semaforActualitzacions.WaitOne();
-			foreach (var obj in controlObj) {
+			foreach (KeyValuePair<ulong,ObjecteSql> obj in controlObj) {
 				ComprovaActualitzacions(obj.Value);
 			}
 			semaforActualitzacions.Release();
@@ -170,11 +168,11 @@ namespace Gabriel.Cat
 
 		public IEnumerator<ObjecteSql> GetEnumerator()
 		{
-			semaforActualitzacions.WaitOne();
-			foreach (var obj in controlObj)
-				yield return obj.Value;
-			semaforActualitzacions.Release();
-		}
+            semaforActualitzacions.WaitOne();
+            foreach (KeyValuePair<ulong,ObjecteSql> obj in controlObj)
+				     yield return obj.Value;
+            semaforActualitzacions.Release();
+        }
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
 		{

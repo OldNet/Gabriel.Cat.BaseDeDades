@@ -6,8 +6,6 @@
  * 
  * Para cambiar esta plantilla use Herramientas | Opciones | Codificación | Editar Encabezados Estándar
  */
-using System;
-
 namespace Gabriel.Cat
 {
 	/// <summary>

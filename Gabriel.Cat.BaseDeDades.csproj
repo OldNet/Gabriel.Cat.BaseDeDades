@@ -33,11 +33,9 @@
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Excel">
-      <HintPath>..\..\..\..\Desktop\Excel file conversion\bin\Debug\Excel.dll</HintPath>
-    </Reference>
-    <Reference Include="Gabriel.Cat.Utilitats">
-      <HintPath>..\Gabriel.Cat.Utilitats\bin\Debug\Gabriel.Cat.Utilitats.dll</HintPath>
+    <Reference Include="Gabriel.Cat.Utilitats, Version=1.0.5849.25896, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Gabriel.Cat.Utilitats\bin\Release\Gabriel.Cat.Utilitats.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>

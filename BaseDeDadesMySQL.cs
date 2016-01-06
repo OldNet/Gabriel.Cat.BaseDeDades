@@ -9,14 +9,17 @@ using System.Collections.Generic;
 using System;
 using System.Data.SqlClient;
 using System.Threading;
+using Gabriel.Cat.Extension;
 
 namespace Gabriel.Cat
 {
-   public class BaseDeDadesMySQL:BaseDeDades
+    public class BaseDeDadesMySQL : BaseDeDades
     {
+        static readonly string missatgeErrorPrimaryKeyDuplicated = "for key 'PRIMARY'";
+
         MySqlConnection cnMySql;
         Semaphore semafor;
-        static string missatgeErrorPrimaryKeyDuplicated = "for key 'PRIMARY'";
+
         public BaseDeDadesMySQL()
         {
             nomBaseDades = "MySQL";
@@ -26,35 +29,39 @@ namespace Gabriel.Cat
         public override bool Conecta()
         {
             bool conectat = true;
-                semafor.WaitOne();
-               
-                try
-                {
-                    cnMySql = new MySqlConnection(connectionString);
-                    cnMySql.Open();
+            semafor.WaitOne();
 
-                }
-                catch { conectat = false; }
-                finally{
-                	semafor.Release();}
-             return conectat;
+            try
+            {
+                cnMySql = new MySqlConnection(connectionString);
+                cnMySql.Open();
+
+            }
+            catch { conectat = false; }
+            finally
+            {
+                semafor.Release();
+            }
+            return conectat;
 
         }
 
-		#region implemented abstract members of BaseDeDades
-		public override TipusBaseDeDades TipusBD {
-			get {
-				return TipusBaseDeDades.MySql;
-			}
-		}
-		#endregion
+        #region implemented abstract members of BaseDeDades
+        public override TipusBaseDeDades TipusBD
+        {
+            get
+            {
+                return TipusBaseDeDades.MySql;
+            }
+        }
+        #endregion
         public override void Desconecta()
         {
-            
-                semafor.WaitOne();
-                cnMySql.Close();
-                semafor.Release();
-            
+
+            semafor.WaitOne();
+            cnMySql.Close();
+            semafor.Release();
+
         }
         /// <summary>
         /// et conecta a la base de dades indicada amb els valors per defecte
@@ -82,7 +89,7 @@ namespace Gabriel.Cat
         /// <param name="user"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        public static string DonamStrinConnection(string nomBaseDades,string user, string password)
+        public static string DonamStrinConnection(string nomBaseDades, string user, string password)
         {
             return DonamStrinConnection(nomBaseDades, "localhost", user, password);
         }
@@ -96,21 +103,22 @@ namespace Gabriel.Cat
         /// <returns></returns>
         public static string DonamStrinConnection(string nomBaseDades, string ipHost, string user, string password)
         {
-            return "Database="+nomBaseDades+";Data Source="+ipHost+";User Id="+user+";Password="+password;
+            return "Database=" + nomBaseDades + ";Data Source=" + ipHost + ";User Id=" + user + ";Password=" + password;
         }
 
         public override string[,] ConsultaTableDirect(string nomTaula)
         {
-            
+            MySqlCommand comand;
+            MySqlDataReader reader = null;
             MiraSiEstaConnectat();
             semafor.WaitOne();
-            MySqlCommand comand = cnMySql.CreateCommand();
+            comand = cnMySql.CreateCommand();
             comand.CommandType = CommandType.TableDirect;
             comand.CommandText = nomTaula;
             string[] campos = null;
             System.Collections.Generic.List<string[]> llistaTaula = null;
-            string[,] taula= new string[0,0];
-            MySqlDataReader reader=null;
+            string[,] taula = new string[0, 0];
+
             try
             {
                 reader = comand.ExecuteReader();
@@ -128,18 +136,21 @@ namespace Gabriel.Cat
                         campos[i] = fila.GetValue(i).ToString();
                     llistaTaula.Add(campos);
                 }
-/// <summary>
-/// Pone los valores en la matriz en su sitio
-/// </summary>
-                taula=new string[llistaTaula.Count,llistaTaula[0].Length];
-                for(int y=0;y<llistaTaula.Count;y++)
-                	for(int x=0;x<llistaTaula[0].Length;x++)
-                		taula[y,x]=llistaTaula[y][x];
+                /// <summary>
+                /// Pone los valores en la matriz en su sitio
+                /// </summary>
+                taula = new string[llistaTaula.Count, llistaTaula[0].Length];
+                for (int y = 0; y < llistaTaula.Count; y++)
+                    for (int x = 0; x < llistaTaula[0].Length; x++)
+                        taula[y, x] = llistaTaula[y][x];
             }
             catch { }
-            finally { semafor.Release();
-                if(reader!=null) 
-                    reader.Close(); }
+            finally
+            {
+                semafor.Release();
+                if (reader != null)
+                    reader.Close();
+            }
             if (reader != null)
                 if (!reader.IsClosed)
                     throw new BDException("");
@@ -151,17 +162,17 @@ namespace Gabriel.Cat
         {
             if (!EstaConectada)
             {
-            	Conecta(); if (!EstaConectada) {try{ semafor.Release();}catch{} throw new BDException("No es pot establir connexió amb la BD"); }
+                Conecta(); if (!EstaConectada) { try { semafor.Release(); } catch { } throw new BDException("No es pot establir connexió amb la BD"); }
             }
         }
 
         public override void ConsultaSQL(string SQL)
         {
+            MySqlCommand comand;
+
             semafor.WaitOne();
             MiraSiEstaConnectat();
-            
-            //var a=new MySqlCommand();
-            var comand=cnMySql.CreateCommand();
+            comand = cnMySql.CreateCommand();
             comand.CommandText = SQL;
             comand.CommandType = CommandType.Text;
             try
@@ -170,79 +181,97 @@ namespace Gabriel.Cat
             }
             catch (Exception m)
             {
-                if (((text)m.Message.ToString()).CountSubString(missatgeErrorPrimaryKeyDuplicated)>0)
+                if (m.Message.Contains(missatgeErrorPrimaryKeyDuplicated))
                 {
 
                     throw new SQLException("PrimaryKey is duplicated");
                 }
                 else
-                	throw m;
+                    throw m;
             }
             finally
             {
                 semafor.Release();
             }
 
-        
+
         }
 
-        public override System.Collections.Generic.List<string[]> ConsultaStoredProcedure(string nomProcediment, List<Parametre> parametres)
+        public override string[,] ConsultaStoredProcedure(string nomProcediment, IEnumerable<Parametre> parametres)
         {
+            MySqlParameter msqlP;
             List<MySqlParameter> parametresMySql = new List<MySqlParameter>();
-            for (int i = 0; i < parametres.Count; i++)
+            List<Parametre> parametresList = new List<Parametre>(parametres);
+
+            for (int i = 0; i < parametresList.Count; i++)
             {
-                MySqlParameter msqlP = new MySqlParameter();
-                switch (parametres.ElementAt(i).direccio)
+                msqlP = new MySqlParameter();
+                switch (parametresList.ElementAt(i).direccio)
                 {
                     case DireccioParametre.IN: msqlP.Direction = ParameterDirection.Input; break;
                     case DireccioParametre.INOUT: msqlP.Direction = ParameterDirection.InputOutput; break;
                     case DireccioParametre.OUT: msqlP.Direction = ParameterDirection.Output; break;
                 }
-                switch (parametres.ElementAt(i).tipus)
+                switch (parametresList.ElementAt(i).tipus)
                 {
                     case TipusParametres.Cursor: msqlP.MySqlDbType = MySqlDbType.DateTime; break;//s'han de acabar de posar pero no calen per l'exercici
                     case TipusParametres.Integer: msqlP.MySqlDbType = MySqlDbType.Int32; break;
                 }
-                msqlP.ParameterName = parametres.ElementAt(i).nom;
-                if(parametres.ElementAt(i).direccio!=DireccioParametre.OUT)
-                msqlP.Value = parametres.ElementAt(i).valor;
+                msqlP.ParameterName = parametresList.ElementAt(i).nom;
+                if (parametresList.ElementAt(i).direccio != DireccioParametre.OUT)
+                    msqlP.Value = parametresList.ElementAt(i).valor;
                 parametresMySql.Add(msqlP);
             }
             return ConsultaStoredProcedure(nomProcediment, parametresMySql);
         }
 
-        public System.Collections.Generic.List<string[]> ConsultaStoredProcedure(string nomProcediment, List<MySqlParameter> parametres)
+        public string[,] ConsultaStoredProcedure(string nomProcediment, IEnumerable<MySqlParameter> parametres)
         {
-            MySqlCommand comand = cnMySql.CreateCommand();
-            comand.CommandType = CommandType.StoredProcedure;
-            System.Collections.Generic.List<string[]> llistaTaula = null;
-            string[] campos = null;
-            foreach (MySqlParameter paramatre in parametres)
-                comand.Parameters.Add(paramatre);
-            comand.CommandText = nomProcediment;
             MySqlDataReader reader = null;
+            MySqlCommand comand = cnMySql.CreateCommand();
+            string[] campos = null;
+            List<string[]> llistaTaula = null;
+            string[,] taulaProcediment=null;
+            semafor.WaitOne();
+            comand.CommandType = CommandType.StoredProcedure;
+            foreach (MySqlParameter paramatre in parametres)
+            {
+                comand.Parameters.Add(paramatre);
+            }
+            comand.CommandText = nomProcediment;
             try
             {
                 reader = comand.ExecuteReader();
-                llistaTaula = new System.Collections.Generic.List<string[]>();
+                llistaTaula = new List<string[]>();
                 campos = new string[reader.FieldCount];
                 for (int i = 0; i < campos.Length; i++)
+                {
                     campos[i] = reader.GetName(i);
+                }
                 llistaTaula.Add(campos);
                 foreach (System.Data.Common.DbDataRecord fila in reader)
                 {
                     campos = new string[fila.FieldCount];
                     for (int i = 0; i < campos.Length; i++)
+                    {
                         campos[i] = fila.GetValue(i).ToString();
+                    }
                     llistaTaula.Add(campos);
                 }
-
-                reader.Close();
-
+                taulaProcediment = llistaTaula.ToMatriu();
             }
-            catch { if (reader != null) reader.Close(); throw new SQLException("El procediment no s'ha executat comprova que estigui ben escrit"); }
+            catch
+            {
+                throw new SQLException("El procediment no s'ha executat comprova que estigui ben escrit");
+            }
+            finally
+            {
+                if (reader != null)
+                    reader.Close();
+                semafor.Release();
+            }
 
-            return llistaTaula;
+            return taulaProcediment;
         }
 
         public override bool EstaConectada
@@ -252,10 +281,11 @@ namespace Gabriel.Cat
 
         public override bool ConsultaSiEsPot(string sql)//mirar si lo hace bien
         {
-            bool esPot=false;
+            bool esPot = false;
+            MySqlCommand comand;
             semafor.WaitOne();
             MiraSiEstaConnectat();
-            var comand = cnMySql.CreateCommand();
+            comand = cnMySql.CreateCommand();
             comand.CommandText = sql;
             comand.CommandType = CommandType.Text;
             try
@@ -268,14 +298,15 @@ namespace Gabriel.Cat
                 semafor.Release();
             }
             return esPot;
-          
+
         }
         public override bool ConsultaSiExisteix(string sql)
         {
             bool existeix = false;
+            MySqlCommand comand;
             semafor.WaitOne();
             MiraSiEstaConnectat();
-            var comand = cnMySql.CreateCommand();
+            comand = cnMySql.CreateCommand();
             comand.CommandText = sql;
             comand.CommandType = CommandType.Text;
             try
@@ -292,16 +323,17 @@ namespace Gabriel.Cat
 
         public override string ConsultaUltimID()
         {
-            string id=null;
+            string id = null;
+            MySqlCommand comand;
             semafor.WaitOne();
             MiraSiEstaConnectat();
-            var comand = cnMySql.CreateCommand();
+            comand = cnMySql.CreateCommand();
             comand.CommandText = "select last_insert_id();";
             comand.CommandType = CommandType.Text;
             try
             {
-          
-                    id = comand.ExecuteScalar().ToString();
+
+                id = comand.ExecuteScalar().ToString();
             }
             catch { }
             finally

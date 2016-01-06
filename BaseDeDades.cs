@@ -80,7 +80,7 @@ namespace Gabriel.Cat
         /// 
         /// <param name="parametres"></param>
         /// <returns>si retorna null es que no ho pot fer</returns>
-        public abstract List<string[]> ConsultaStoredProcedure(string nomProcediment,List<Parametre> parametres);
+        public abstract string[,] ConsultaStoredProcedure(string nomProcediment,IEnumerable<Parametre> parametres);
 
 
 

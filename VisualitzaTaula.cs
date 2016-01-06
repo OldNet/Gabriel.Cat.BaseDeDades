@@ -34,10 +34,13 @@ namespace Gabriel.Cat
         {
             if (baseDades.EstaConectada)
             {
-                nomTaulaActual = nomTaula;
+                
                 DataGridViewRow row;
                 string[] camps;
-                string[,] taulaDirectLlista = baseDades.ConsultaTableDirect(nomTaula);
+                string[,] taulaDirectLlista;
+
+                nomTaulaActual = nomTaula;
+                taulaDirectLlista = baseDades.ConsultaTableDirect(nomTaula);
                 dgvDadesTaulaConsultada.Rows.Clear();
                 dgvDadesTaulaConsultada.Columns.Clear();
                 if (taulaDirectLlista != null)
