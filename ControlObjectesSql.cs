@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using Gabriel.Cat.Extension;
 
 using System.Threading;
 
@@ -153,6 +153,17 @@ namespace Gabriel.Cat
 			Drops();
 			Creates();
 		}
+        public void MigrarBD(BaseDeDades bdDestion,bool borrarDatosBdActual=false,bool resetBDTablasAfactadasDestino=true)
+        {//por testear...
+            ObjecteSql[] objs = this.controlObj.ValuesToArray();
+            if (borrarDatosBdActual)
+                Drops();
+            this.baseDeDades = bdDestion;
+            if (resetBDTablasAfactadasDestino)
+                Drops();//lo tengo que hacer porque no se como son las tablas de la bd actual...mirar de comprobar si es compatible si lo es no se resetea...solo se pasan los datos...a no ser que se ponga true lo de hacer reset
+            Creates();//crea las que no existan
+            Afegir(objs);//añade...deberia petar si la estructura es diferente de la tabla destino...
+        }
 		public abstract dynamic Restaurar();
 		private static BaseDeDades DonamBD(TipusBaseDeDades tipusBD)
 		{
