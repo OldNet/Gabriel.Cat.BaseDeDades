@@ -33,6 +33,7 @@ namespace Gabriel.Cat
 		string[] tablas;
 		public ControlObjectesSql(BaseDeDades baseDeDades, string[] creates)
 		{
+            CreatesSql = creates;
 			this.baseDeDades = baseDeDades;
 			baseDeDades.Conecta();
 			controlObj = new LlistaOrdenada<ulong, ObjecteSql>();
@@ -75,13 +76,13 @@ namespace Gabriel.Cat
                 string nombre;
                 int indexParentesis;
                 for (int i = 0; i < tablas.Length; i++) {
-                    nombre = value[i].Split(' ')[2];
+                    nombre = value[i].Split(' ')[2];//create table nombreTabla...
                     if(nombre.Contains('('))
                     {
                         indexParentesis = nombre.IndexOf('(');
                         nombre = nombre.Remove(indexParentesis, nombre.Length - indexParentesis);
                     }
-                    tablas[i] = nombre;
+                    tablas[i] = nombre.ToLower();
                 }
 				if (tablas.Distinct().Count() != tablas.Length) {
 					throw new Exception("Hay dos o mas creates para una misma tabla...");
@@ -187,13 +188,8 @@ namespace Gabriel.Cat
 		}
 		public  void Drops()
 		{
-			//por probar
 			for (int i = 0; i < tablas.Length; i++)
-				try {
-				BaseDeDades.ConsultaSQL("drop table " + tablas[i] + ";");
-
-			} catch {
-			}
+				BaseDeDades.DropTable(tablas[i]);
 		}
 		public void Reset()
 		{

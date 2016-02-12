@@ -70,7 +70,7 @@ namespace Gabriel.Cat
         {
         	return ConsultaTableDirect(nomTaula).GetLength(DimensionMatriz.Fila)!=0;
         }
-        public abstract string ConsultaUltimID();
+        public abstract string ConsultaUltimID();//com es una sentencia sql diferent a cada BD no puc fer-hi mes...
 
         /// <summary>
         /// si retorna una linea es el resultat d'un escalar si retorna més es el resultat d'un cursor llavors
@@ -84,7 +84,15 @@ namespace Gabriel.Cat
         public abstract string[,] ConsultaStoredProcedure(string nomProcediment,IEnumerable<Parametre> parametres);
         public string DescTable(string tableName)
         {
-            return ConsultaSQL("desc " + tableName);
+            return ConsultaSQL("desc " + tableName + ";");
+        }
+        public void DropTable(string tableName)
+        {
+            try
+            {
+                ConsultaSQL("drop " + tableName + ";");
+            }
+            catch { }
         }
     }
  
