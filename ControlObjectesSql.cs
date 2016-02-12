@@ -72,8 +72,17 @@ namespace Gabriel.Cat
 					throw new ArgumentException("Los Creates se usan para poder crear,resetear,eliminar y migrar la BD");
 				
 				string[] tablas = new string[value.Length];
-				for (int i = 0; i < tablas.Length; i++)
-					tablas[i] = value[i].Split(' ')[1];
+                string nombre;
+                int indexParentesis;
+                for (int i = 0; i < tablas.Length; i++) {
+                    nombre = value[i].Split(' ')[2];
+                    if(nombre.Contains('('))
+                    {
+                        indexParentesis = nombre.IndexOf('(');
+                        nombre = nombre.Remove(indexParentesis, nombre.Length - indexParentesis);
+                    }
+                    tablas[i] = nombre;
+                }
 				if (tablas.Distinct().Count() != tablas.Length) {
 					throw new Exception("Hay dos o mas creates para una misma tabla...");
 				}
