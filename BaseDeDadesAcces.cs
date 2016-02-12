@@ -158,9 +158,10 @@ namespace Gabriel.Cat
             return taula;
         }
 
-        public override void ConsultaSQL(string sql)
+        public override string ConsultaSQL(string sql)
         {
             OleDbCommand comand;
+            string resultado=null;
             semafor.WaitOne();
             ComprovaConnexio();
             if (EstaConectada)
@@ -170,7 +171,7 @@ namespace Gabriel.Cat
                 comand.CommandType = CommandType.Text;
                 try
                 {
-                    comand.ExecuteReader();//da la select
+                    resultado = comand.ExecuteReader().ToString();//da la select
                 }
                 catch (Exception m)
                 {
@@ -182,7 +183,7 @@ namespace Gabriel.Cat
                 }
             }
             semafor.Release();
-
+            return resultado;
         }
 
         private void ComprovaConnexio()
@@ -230,21 +231,19 @@ namespace Gabriel.Cat
             return esPot;
 
         }
-
-        public override bool ConsultaSiExisteix(string sql)
+        public override bool CompruebaSiFunciona(string sql)
         {
             bool existeix = false;
-            OleDbCommand comand;
-            OleDbDataReader tablaConsulta;
             semafor.WaitOne();
             ComprovaConnexio();
-            comand = cnOleDb.CreateCommand();
+            var comand = cnOleDb.CreateCommand();
             comand.CommandText = sql;
             comand.CommandType = CommandType.Text;
             try
             {
-                tablaConsulta = comand.ExecuteReader();
-                existeix = tablaConsulta.HasRows;
+
+                var r = comand.ExecuteReader();
+                existeix = r.HasRows;
             }
             catch { }
             finally
@@ -253,28 +252,9 @@ namespace Gabriel.Cat
             }
             return existeix;
         }
-
         public override string ConsultaUltimID()
         {
-
-            string id = null;
-            OleDbCommand comand;
-            semafor.WaitOne();
-            ComprovaConnexio();
-            comand = cnOleDb.CreateCommand();
-            comand.CommandText = "Select @@Identity";
-            comand.CommandType = CommandType.Text;
-            try
-            {
-
-                id = (int)comand.ExecuteScalar() + "";
-            }
-            catch { }
-            finally
-            {
-                semafor.Release();
-            }
-            return id;
+            return ConsultaSQL("Select @@Identity");
         }
     }
 }

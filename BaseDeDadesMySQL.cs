@@ -166,10 +166,10 @@ namespace Gabriel.Cat
             }
         }
 
-        public override void ConsultaSQL(string SQL)
+        public override string ConsultaSQL(string SQL)
         {
             MySqlCommand comand;
-
+            string resultado = null;
             semafor.WaitOne();
             MiraSiEstaConnectat();
             comand = cnMySql.CreateCommand();
@@ -177,7 +177,7 @@ namespace Gabriel.Cat
             comand.CommandType = CommandType.Text;
             try
             {
-                comand.ExecuteScalar();//da un numero que es el resultado de una funcion
+                resultado = comand.ExecuteScalar().ToString();//da un numero que es el resultado de una funcion
             }
             catch (Exception m)
             {
@@ -193,7 +193,7 @@ namespace Gabriel.Cat
             {
                 semafor.Release();
             }
-
+            return resultado;
 
         }
 
@@ -300,13 +300,12 @@ namespace Gabriel.Cat
             return esPot;
 
         }
-        public override bool ConsultaSiExisteix(string sql)
+        public override bool CompruebaSiFunciona(string sql)
         {
             bool existeix = false;
-            MySqlCommand comand;
             semafor.WaitOne();
             MiraSiEstaConnectat();
-            comand = cnMySql.CreateCommand();
+            var comand = cnMySql.CreateCommand();
             comand.CommandText = sql;
             comand.CommandType = CommandType.Text;
             try
@@ -320,27 +319,10 @@ namespace Gabriel.Cat
             }
             return existeix;
         }
-
         public override string ConsultaUltimID()
-        {
-            string id = null;
-            MySqlCommand comand;
-            semafor.WaitOne();
-            MiraSiEstaConnectat();
-            comand = cnMySql.CreateCommand();
-            comand.CommandText = "select last_insert_id();";
-            comand.CommandType = CommandType.Text;
-            try
-            {
-
-                id = comand.ExecuteScalar().ToString();
-            }
-            catch { }
-            finally
-            {
-                semafor.Release();
-            }
-            return id;
-        }
+         {
+             return ConsultaSQL("select last_insert_id();");
+         }
+        
     }
 }

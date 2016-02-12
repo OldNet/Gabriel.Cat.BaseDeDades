@@ -29,8 +29,9 @@ namespace Gabriel.Cat
 		private BaseDeDades baseDeDades;
 		System.Timers.Timer temporitzadorActualitzacions;
 		Semaphore semaforActualitzacions;
-
-		public ControlObjectesSql(BaseDeDades baseDeDades)
+		string[] creates;
+		string[] tablas;
+		public ControlObjectesSql(BaseDeDades baseDeDades, string[] creates)
 		{
 			this.baseDeDades = baseDeDades;
 			baseDeDades.Conecta();
@@ -43,12 +44,12 @@ namespace Gabriel.Cat
 			Creates();
 		}
 
-		public ControlObjectesSql(TipusBaseDeDades tipusBD)
-			: this(DonamBD(tipusBD))
+		public ControlObjectesSql(TipusBaseDeDades tipusBD, string[] creates)
+			: this(DonamBD(tipusBD), creates)
 		{
 		}
-		public ControlObjectesSql()
-			: this(TipusBaseDeDades.MySql)
+		public ControlObjectesSql(string[] creates)
+			: this(TipusBaseDeDades.MySql, creates)
 		{
 		}
 		protected BaseDeDades BaseDeDades {
@@ -60,7 +61,28 @@ namespace Gabriel.Cat
 			get { return temporitzadorActualitzacions.Interval; }
 			set { temporitzadorActualitzacions.Interval = value; }
 		}
-		public Tipus[] DonamObjectes<Tipus>()
+
+		public string[] CreatesSql {
+			get {
+				return creates;
+			}
+
+			set {
+				if (value == null || value.Length == 0)
+					throw new ArgumentException("Los Creates se usan para poder crear,resetear,eliminar y migrar la BD");
+				
+				string[] tablas = new string[value.Length];
+				for (int i = 0; i < tablas.Length; i++)
+					tablas[i] = value[i].Split(' ')[1];
+				if (tablas.Distinct().Count() != tablas.Length) {
+					throw new Exception("Hay dos o mas creates para una misma tabla...");
+				}
+				creates = value;
+				this.tablas = tablas;
+			}
+		}
+
+		public Tipus[] DonamObjectes<Tipus>() where Tipus:ObjecteSql
 		{
 			return this.OfType<Tipus>().ToArray<Tipus>();
 		}
@@ -69,7 +91,7 @@ namespace Gabriel.Cat
 		public void Afegir(ObjecteSql objSql)
 		{
 			if (objSql != null)
-			if (!controlObj.Existeix(objSql.IdIntern)) {
+				if (!controlObj.Existeix(objSql.IdIntern)) {
 				try {
 					baseDeDades.ConsultaSQL(objSql.StringInsertSql(baseDeDades.TipusBD));//si peta no lo pone...
 					if (objSql is ObjecteSqlIdAuto) {
@@ -120,7 +142,7 @@ namespace Gabriel.Cat
 					controlObj[idInternObjSql].Baixa -= new ObjecteSqlEventHandler(Treu);
 					controlObj[idInternObjSql].Actualitzat -= ComprovaActualitzacions;
 					controlObj[idInternObjSql].Alta += new ObjecteSqlEventHandler(Afegir);
-				    controlObj.Elimina(idInternObjSql);
+					controlObj.Elimina(idInternObjSql);
 				} catch {
 				}
 
@@ -146,30 +168,60 @@ namespace Gabriel.Cat
 		/// <summary>
 		/// Crea si no existeixen les taules per defecte Productes,Receptes,Ingredients,UnitatsProductes
 		/// </summary>
-		public  abstract void Creates();
-		public abstract void Drops();
+		public  void Creates()
+		{
+            //por probar
+			for (int i = 0; i < creates.Length; i++)
+              if (!BaseDeDades.ExisteixTaula(tablas[i]))
+                     BaseDeDades.ConsultaSQL(creates[i]);
+
+		}
+		public  void Drops()
+		{
+			//por probar
+			for (int i = 0; i < tablas.Length; i++)
+				try {
+				BaseDeDades.ConsultaSQL("drop table " + tablas[i] + ";");
+
+			} catch {
+			}
+		}
 		public void Reset()
 		{
 			Drops();
 			Creates();
 		}
-        public void MigrarBD(BaseDeDades bdDestion,bool borrarDatosBdActual=false,bool resetBDTablasAfactadasDestino=true)
-        {//por testear...
-            ObjecteSql[] objs = this.controlObj.ValuesToArray();
-            if (borrarDatosBdActual)
-                Drops();
-            this.baseDeDades = bdDestion;
-            if (resetBDTablasAfactadasDestino)
-                Drops();//lo tengo que hacer porque no se como son las tablas de la bd actual...mirar de comprobar si es compatible si lo es no se resetea...solo se pasan los datos...a no ser que se ponga true lo de hacer reset
-            Creates();//crea las que no existan
-            Afegir(objs);//añade...deberia petar si la estructura es diferente de la tabla destino...
-        }
+		public bool EstructuraTablasIdentica(BaseDeDades bdDestino)
+		{//por probar
+			bool correcto=true;
+			for(int i=0;i<tablas.Length&&correcto;i++)
+			{
+				if(BaseDeDades.ExisteixTaula(tablas[i]))
+				{
+					correcto=bdDestino.DescTable(tablas[i])==BaseDeDades.DescTable(tablas[i]);
+				}
+			}
+			return correcto;
+		}
+		public void MigrarBD(BaseDeDades bdDestino, bool borrarDatosBdActual = false, bool resetBDTablasAfactadasDestino = true)
+		{//por testear...
+			if(!resetBDTablasAfactadasDestino&&!EstructuraTablasIdentica(bdDestino))
+				throw new SQLException("La base de datos del destino no tiene la misma estructura en las tablas");
+			ObjecteSql[] objs = this.controlObj.ValuesToArray();
+			if (borrarDatosBdActual)
+				Drops();
+			this.baseDeDades = bdDestino;
+			if (resetBDTablasAfactadasDestino)
+				Drops();
+			Creates();//crea las que no existan
+			Afegir(objs);//añade
+		}
 		public abstract dynamic Restaurar();
 		private static BaseDeDades DonamBD(TipusBaseDeDades tipusBD)
 		{
 			BaseDeDades bd = null;
 			switch (tipusBD) {
-			//case TipusBaseDeDades.Acces: bd = new BaseDeDadesAcces(); break;
+					//case TipusBaseDeDades.Acces: bd = new BaseDeDadesAcces(); break;
 				case TipusBaseDeDades.MySql:
 					bd = new BaseDeDadesMySQL();
 					break;
@@ -179,11 +231,11 @@ namespace Gabriel.Cat
 
 		public IEnumerator<ObjecteSql> GetEnumerator()
 		{
-            semaforActualitzacions.WaitOne();
-            foreach (KeyValuePair<ulong,ObjecteSql> obj in controlObj)
-				     yield return obj.Value;
-            semaforActualitzacions.Release();
-        }
+			semaforActualitzacions.WaitOne();
+			foreach (KeyValuePair<ulong,ObjecteSql> obj in controlObj)
+				yield return obj.Value;
+			semaforActualitzacions.Release();
+		}
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
 		{
@@ -235,7 +287,7 @@ namespace Gabriel.Cat
 					
 				} catch (SQLException m) {//mirar si hace falta el if...
 //					if (((text)(m.Message.ToString())).CountSubString("PrimaryKey") > 0)//si da problemas en la primarykey por el update es que no se puede poner esa...
-						obj.RestauraPrimaryKey(m.Message);//la restauro...
+					obj.RestauraPrimaryKey(m.Message);//la restauro...
 				} finally {
 					obj.Actualitzat += ComprovaActualitzacions;
 				}
