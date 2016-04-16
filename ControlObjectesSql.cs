@@ -221,7 +221,7 @@ namespace Gabriel.Cat
 			Creates();//crea las que no existan
 			Afegir(objs);//añade
 		}
-		public abstract dynamic Restaurar();
+		public abstract void Restaurar();
 		private static BaseDeDades DonamBD(TipusBaseDeDades tipusBD)
 		{
 			BaseDeDades bd = null;
