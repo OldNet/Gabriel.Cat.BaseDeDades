@@ -43,6 +43,7 @@ namespace Gabriel.Cat
 			temporitzadorActualitzacions.Elapsed += new System.Timers.ElapsedEventHandler(ComprovaActualitzacionsEvent);
 			semaforActualitzacions = new Semaphore(1, 1);
 			Creates();
+            Restaurar();
 		}
 
 		public ControlObjectesSql(TipusBaseDeDades tipusBD, string[] creates)
@@ -221,7 +222,7 @@ namespace Gabriel.Cat
 			Creates();//crea las que no existan
 			Afegir(objs);//añade
 		}
-		public abstract void Restaurar();
+		protected abstract void Restaurar();
 		private static BaseDeDades DonamBD(TipusBaseDeDades tipusBD)
 		{
 			BaseDeDades bd = null;
