@@ -163,16 +163,19 @@ namespace Gabriel.Cat
 		/// <param name="numero"></param>
 		protected void CanviNumero(string clauCanvi, string numero)
 		{
+            
 			if (!ExisteixCanvi(clauCanvi))
 				throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
+            if (numero == null) numero = "NULL";
 			canvisObj[clauCanvi] = new DadesSql?(new DadesSql(numero, false));
 		}
 		protected void CanviString(string clauCanvi, string text)
 		{
 			if (!ExisteixCanvi(clauCanvi))
 				throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
-
-			canvisObj[clauCanvi] = new DadesSql?(new DadesSql("'" + text + "'", false));
+            if (text == null) text = "NULL";
+            else text = "'" + text + "'";
+            canvisObj[clauCanvi] = new DadesSql?(new DadesSql(text, false));
 		}
 		/// <summary>
 		/// Dona d'alta el canvi en format mysql
@@ -193,7 +196,7 @@ namespace Gabriel.Cat
 		{
 			if (!ExisteixCanvi(clauCanvi))
 				throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
-
+            if (data == null) data = "NULL";
 			canvisObj[clauCanvi] = new DadesSql?(new DadesSql(data, true));
 
 		}
@@ -263,8 +266,10 @@ namespace Gabriel.Cat
 		public string StringUpdateSql(TipusBaseDeDades tipusBD)
 		{
 			string sentencia = null;
-			if (ComprovacioSiEsPot()) {
-				List<string> canvis = new List<string>();
+            List<string> canvis;
+
+            if (ComprovacioSiEsPot()) {
+				canvis = new List<string>();
 				foreach (KeyValuePair<string, DadesSql?> campValor in canvisObj)
 					if (campValor.Value != null) {
 					if (campValor.Key != "Id") {
