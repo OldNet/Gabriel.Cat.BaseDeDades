@@ -61,6 +61,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ArchuiBD.cs" />
     <Compile Include="BaseDeDades.cs" />
     <Compile Include="BaseDeDadesAcces.cs" />
     <Compile Include="BaseDeDadesMySQL.cs" />
