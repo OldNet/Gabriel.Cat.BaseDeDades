@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 using Gabriel.Cat.Extension;
 namespace Gabriel.Cat
 {
-  public  class ArchuiBD
+  public  class FitxerBD
     {
         string nomArchiuAmbExtensió;
         byte[] dades;
         const char CARACTERSEPARACIONOMYDADES=',';
         const char CARACTERSERPARADORARCHIUSBD = ';';
 
-        public ArchuiBD(string nomArchiuAmbExtensió, byte[] dades)
+        public FitxerBD(string nomArchiuAmbExtensió, byte[] dades)
         {
             this.nomArchiuAmbExtensió = nomArchiuAmbExtensió;
             this.dades = dades;
@@ -50,20 +50,20 @@ namespace Gabriel.Cat
         {
             return NomArchiuAmbExtensió + CARACTERSEPARACIONOMYDADES + Dades.ToHex();
         }
-        public static string ToAllStringBD(IEnumerable<ArchuiBD> archius)
+        public static string ToAllStringBD(IEnumerable<FitxerBD> fitxers)
         {
-            string stringAll = "";
-            if (archius != null)
+            StringBuilder stringAll = new StringBuilder();
+            if (fitxers != null)
             {
-                foreach (ArchuiBD archiu in archius)
-                    stringAll += CARACTERSERPARADORARCHIUSBD + archiu.ToStringBD();
-                stringAll = stringAll.Substring(1, stringAll.Length - 1);
+                foreach (FitxerBD archiu in fitxers)
+                    stringAll.Append(archiu.ToStringBD()+ CARACTERSERPARADORARCHIUSBD);
+                stringAll.Remove(1, stringAll.Length - 1);
             }
-            return stringAll;
+            return stringAll.ToString();
         }
-        public static ArchuiBD[] StringToArchiusBD(string stringAll)
+        public static FitxerBD[] StringToArchiusBD(string stringAll)
         {
-            List<ArchuiBD> archius = new List<ArchuiBD>();
+            List<FitxerBD> archius = new List<FitxerBD>();
             string[] archiusString;
             string[] camps;
             if (!String.IsNullOrEmpty(stringAll) && stringAll.Contains(CARACTERSEPARACIONOMYDADES))
@@ -74,7 +74,7 @@ namespace Gabriel.Cat
                 for (int i = 0; i < archiusString.Length; i++)
                 {
                     camps = archiusString[i].Split(CARACTERSEPARACIONOMYDADES);
-                    archius.Add(new ArchuiBD(camps[0], camps[1].HexStringToByteArray()));
+                    archius.Add(new FitxerBD(camps[0], camps[1].HexStringToByteArray()));
                 }
             }
             return archius.ToArray();
