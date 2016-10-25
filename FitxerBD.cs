@@ -48,7 +48,7 @@ namespace Gabriel.Cat
         }
         public string ToStringBD()
         {
-            return NomArchiuAmbExtensió + CARACTERSEPARACIONOMYDADES + Dades.ToHex();
+            return NomArchiuAmbExtensió + CARACTERSEPARACIONOMYDADES + (Hex)Dades;
         }
         public static string ToAllStringBD(IEnumerable<FitxerBD> fitxers)
         {
@@ -74,7 +74,7 @@ namespace Gabriel.Cat
                 for (int i = 0; i < archiusString.Length; i++)
                 {
                     camps = archiusString[i].Split(CARACTERSEPARACIONOMYDADES);
-                    archius.Add(new FitxerBD(camps[0], camps[1].HexStringToByteArray()));
+                    archius.Add(new FitxerBD(camps[0], (Hex)camps[1]));
                 }
             }
             return archius.ToArray();

@@ -102,7 +102,7 @@ namespace Gabriel.Cat
 		public void Afegir(ObjecteSql objSql)
 		{
 			if (objSql != null)
-				if (!controlObj.Existeix(objSql.IdIntern)) {
+				if (!controlObj.ContainsKey(objSql.IdIntern)) {
 				try {
 					baseDeDades.ConsultaSQL(objSql.StringInsertSql(baseDeDades.TipusBD));//si peta no lo pone...
 					if (objSql is ObjecteSqlIdAuto) {
@@ -112,9 +112,9 @@ namespace Gabriel.Cat
 
 				} catch {
 				} finally {
-					if (!controlObj.Existeix(objSql.IdIntern)) {
+					if (!controlObj.ContainsKey(objSql.IdIntern)) {
 						semaforActualitzacions.WaitOne();
-						controlObj.Afegir(objSql.IdIntern, objSql);
+						controlObj.Add(objSql.IdIntern, objSql);
 						semaforActualitzacions.Release();
 						try {
 							objSql.Baixa += Treu;
@@ -147,13 +147,13 @@ namespace Gabriel.Cat
 		}
 		public void Treu(ulong idInternObjSql)
 		{
-			if (controlObj.Existeix(idInternObjSql)) {
+			if (controlObj.ContainsKey(idInternObjSql)) {
 				try {
 					baseDeDades.ConsultaSQL(controlObj[idInternObjSql].StringDeleteSql());//elimina de la base de dades,si peta no el treu...
 					controlObj[idInternObjSql].Baixa -= new ObjecteSqlEventHandler(Treu);
 					controlObj[idInternObjSql].Actualitzat -= ComprovaActualitzacions;
 					controlObj[idInternObjSql].Alta += new ObjecteSqlEventHandler(Afegir);
-					controlObj.Elimina(idInternObjSql);
+					controlObj.Remove(idInternObjSql);
 				} catch {
 				}
 

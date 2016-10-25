@@ -64,7 +64,7 @@ namespace Gabriel.Cat
 		{
 			Llista<IEnumerable<string>> taulesArxius = new Llista<IEnumerable<string>>();
 			foreach (DataTable taula in excelDataSet.Tables) {
-				taulesArxius.Afegir(taula.ToMatriu().ToCsv(separador));
+				taulesArxius.Add(taula.ToMatriu().ToCsv(separador));
 				
 			}
 				
@@ -91,7 +91,7 @@ namespace Gabriel.Cat
 				for (int x = 1; x < datos.GetLength(DimensionMatriz.X); x++) {
 					fila += separador + datos[x, y];
 				}
-				llista.Afegir(fila);
+				llista.Add(fila);
 			}
 			return llista;
 				
