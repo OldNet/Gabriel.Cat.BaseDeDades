@@ -14,12 +14,12 @@ namespace Gabriel.Cat
 
         OleDbConnection cnOleDb;
         Semaphore semafor;
-
-        public BaseDeDadesAcces()
+        public BaseDeDadesAcces():this(DonamStringConnection("BaseDeDadesAcces/bdDades.mdb")){}
+        public BaseDeDadesAcces(string connectionString)
         {
 
             nomBaseDades = "Acces";
-            connectionString = DonamStringConnection("BaseDeDadesAcces/bdDades.mdb");
+            this.connectionString = connectionString;
             semafor = new Semaphore(1, 1);
         }
 

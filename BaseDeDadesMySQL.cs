@@ -20,10 +20,10 @@ namespace Gabriel.Cat
         MySqlConnection cnMySql;
         Semaphore semafor;
 
-        public BaseDeDadesMySQL()
+        public BaseDeDadesMySQL(string connectionString= "Database=test;Data Source=localhost;User Id=root;Password=")
         {
             nomBaseDades = "MySQL";
-            connectionString = "Database=test;Data Source=localhost;User Id=root;Password=";
+            this.connectionString = connectionString;
             semafor = new Semaphore(1, 1);
         }
         public override bool Conecta()
