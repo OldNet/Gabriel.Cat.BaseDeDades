@@ -138,6 +138,18 @@ namespace Gabriel.Cat
 			}
 		}
 		#endregion
+        protected bool[] AltaCanvis(Type enumType)
+        {
+            Enum[] enumADonarDalta =(Enum[]) Enum.GetValues(enumType);
+            bool[] resultAlta = new bool[enumADonarDalta.Length];
+            for (int i = 0; i < enumADonarDalta.Length; i++)
+                resultAlta[i] = AltaCanvi(enumADonarDalta[i]);
+            return resultAlta;
+        }
+        protected bool AltaCanvi(Enum enumCaluCanvi)
+        {
+            return AltaCanvi(enumCaluCanvi.ToString());
+        }
 		protected bool AltaCanvi(string clauCanvi)
 		{
 			bool alta = !ExisteixCanvi(clauCanvi);
@@ -145,23 +157,35 @@ namespace Gabriel.Cat
 				canvisObj.Add(clauCanvi, null);
 			return alta;
 		}
-		protected bool BaixaCanvi(string clauCanvi)
+        protected bool BaixaCanvi(Enum enumCaluCanvi)
+        {
+            return BaixaCanvi(enumCaluCanvi.ToString());
+        }
+        protected bool BaixaCanvi(string clauCanvi)
 		{
 			bool baixa = ExisteixCanvi(clauCanvi);
 			if (baixa)
 				canvisObj.Remove(clauCanvi);
 			return baixa;
 		}
-		protected bool ExisteixCanvi(string clauCanvi)
+        protected bool ExisteixCanvi(Enum enumCaluCanvi)
+        {
+            return ExisteixCanvi(enumCaluCanvi.ToString());
+        }
+        protected bool ExisteixCanvi(string clauCanvi)
 		{
 			return canvisObj.ContainsKey(clauCanvi);
 		}
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="clauCanvi"></param>
-		/// <param name="numero"></param>
-		protected void CanviNumero(string clauCanvi, string numero)
+        protected void CanviNumero(Enum enumCaluCanvi,string numero)
+        {
+            CanviNumero(enumCaluCanvi.ToString(),numero);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="clauCanvi"></param>
+        /// <param name="numero"></param>
+        protected void CanviNumero(string clauCanvi, string numero)
 		{
             
 			if (!ExisteixCanvi(clauCanvi))
@@ -169,7 +193,11 @@ namespace Gabriel.Cat
             if (numero == null) numero = "NULL";
 			canvisObj[clauCanvi] = new DadesSql?(new DadesSql(numero, false));
 		}
-		protected void CanviString(string clauCanvi, string text)
+        protected void CanviString(Enum enumCaluCanvi, string text)
+        {
+            CanviString(enumCaluCanvi.ToString(), text);
+        }
+        protected void CanviString(string clauCanvi, string text)
 		{
 			if (!ExisteixCanvi(clauCanvi))
 				throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
@@ -177,22 +205,29 @@ namespace Gabriel.Cat
             else text = "'" + text + "'";
             canvisObj[clauCanvi] = new DadesSql?(new DadesSql(text, false));
 		}
-		/// <summary>
-		/// Dona d'alta el canvi en format mysql
-		/// </summary>
-		/// <param name="clauCanvi"></param>
-		/// <param name="data"></param>
-		protected void CanviData(string clauCanvi, DateTime data)
+        protected void CanviData(Enum enumCaluCanvi, DateTime data)
+        {
+            CanviData(enumCaluCanvi.ToString(), data);
+        }
+        /// <summary>
+        /// Dona d'alta el canvi en format mysql
+        /// </summary>
+        /// <param name="clauCanvi"></param>
+        /// <param name="data"></param>
+        protected void CanviData(string clauCanvi, DateTime data)
 		{
 			CanviData(clauCanvi, data.ToShortDateString());
 		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="clauCanvi"></param>
-		/// <param name="data">En format ShortDate '%d/%m/%Y'</param>
-		protected void CanviData(string clauCanvi, string data)
+        protected void CanviData(Enum enumCaluCanvi, string data)
+        {
+            CanviData(enumCaluCanvi.ToString(), data);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="clauCanvi"></param>
+        /// <param name="data">En format ShortDate '%d/%m/%Y'</param>
+        protected void CanviData(string clauCanvi, string data)
 		{
 			if (!ExisteixCanvi(clauCanvi))
 				throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
@@ -200,11 +235,19 @@ namespace Gabriel.Cat
 			canvisObj[clauCanvi] = new DadesSql?(new DadesSql(data, true));
 
 		}
-		protected void CanviTimeSpan(string clauCanvi, TimeSpan temps)
+        protected void CanviTimeSpan(Enum enumCaluCanvi, TimeSpan temps)
+        {
+            CanviTimeSpan(enumCaluCanvi.ToString(), temps);
+        }
+        protected void CanviTimeSpan(string clauCanvi, TimeSpan temps)
 		{
 			CanviString(clauCanvi, temps.Days + ";" + temps.Hours + ";" + temps.Minutes + ";" + temps.Seconds + ";" + temps.Milliseconds);
 		}
-		protected void TreuCanvi(string clauCanvi)
+        protected void TreuCanvi(Enum enumCaluCanvi)
+        {
+            TreuCanvi(enumCaluCanvi.ToString());
+        }
+        protected void TreuCanvi(string clauCanvi)
 		{
 			if (ExisteixCanvi(clauCanvi))
 				canvisObj[clauCanvi] = null;
