@@ -6,14 +6,24 @@
  * 
  * Para cambiar esta plantilla use Herramientas | Opciones | Codificación | Editar Encabezados Estándar
  */
+using System;
+
 namespace Gabriel.Cat
 {
 	/// <summary>
 	/// Description of ObjecteSqlIdAuto.
 	/// </summary>
-	public abstract class ObjecteSqlIdAuto:ObjecteSql
+	public abstract class ObjecteSqlIdAuto:ObjecteSql,IClauUnicaPerObjecte
 	{
 		protected ObjecteSqlIdAuto(string taula,string primaryKey,string campPrimaryKey ): base(taula, primaryKey,campPrimaryKey)
 		{}
-	}
+
+        public IComparable Clau
+        {
+            get
+            {
+                return PrimaryKey;
+            }
+        }
+    }
 }
