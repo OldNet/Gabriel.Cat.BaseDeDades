@@ -91,7 +91,7 @@ namespace Gabriel.Cat
         /// <returns></returns>
         public static string DonamStrinConnection(string nomBaseDades, string user, string password)
         {
-            return DonamStrinConnection(nomBaseDades, "localhost", user, password);
+            return DonamStringConnection(nomBaseDades, "localhost", user, password);
         }
         /// <summary>
         /// retorna la string per fer la conexió
@@ -101,7 +101,7 @@ namespace Gabriel.Cat
         /// <param name="user"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        public static string DonamStrinConnection(string nomBaseDades, string ipHost, string user, string password)
+        public static string DonamStringConnection(string nomBaseDades, string ipHost, string user, string password)
         {
             return "Database=" + nomBaseDades + ";Data Source=" + ipHost + ";User Id=" + user + ";Password=" + password;
         }
