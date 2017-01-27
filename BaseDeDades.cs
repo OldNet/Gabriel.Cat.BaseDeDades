@@ -28,7 +28,7 @@ namespace Gabriel.Cat
     {
         protected string connectionString;
         protected string nomBaseDades;
-      
+        public const char CaracterSeparacionPorDefectoSelect = ' ';//por mirar
         public abstract bool Conecta();
 
 		public abstract TipusBaseDeDades TipusBD {
