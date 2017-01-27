@@ -290,7 +290,7 @@ namespace Gabriel.Cat
 			if (Actualitzat != null)
 				Actualitzat(this);
 			List<string> claus = new List<string>();
-			foreach (var keyValue in canvisObj)
+			foreach (KeyValuePair<string,DadesSql?> keyValue in canvisObj)
 				claus.Add(keyValue.Key);
 			for (int i = 0; i < claus.Count; i++)
 				canvisObj[claus[i]] = null;
@@ -397,23 +397,24 @@ namespace Gabriel.Cat
 		{
 			return DateTimeToStringSQL(TipusBaseDeDades.MySql, data);
 		}
-
+   
 		public static string DateTimeToStringSQL(TipusBaseDeDades baseDeDadesDesti, DateTime data)
 		{
-			return DateTimeToStringSQL(baseDeDadesDesti, data);
+			return DateTimeToStringSQL(baseDeDadesDesti, data.ToString(@"MM\/dd\/yyyy HH:mm:ss"));
 		}
-		public static string DateTimeToStringSQL(TipusBaseDeDades baseDeDadesDesti, string data)
-		{
+
+        public static string DateTimeToStringSQL(TipusBaseDeDades baseDeDadesDesti, string data)
+		{//se tiene que probar
 			string dateTimeToStringSQL = "";
 			switch (baseDeDadesDesti) {
 				case TipusBaseDeDades.MySql:
-					dateTimeToStringSQL = "str_to_date('" + data + "', '%d/%m/%Y')";
+					dateTimeToStringSQL = "str_to_date('" + data + "', '%d/%m/%Y %H:%i:%s')";
 					break;
 				case TipusBaseDeDades.Oracle:
-					dateTimeToStringSQL = "to_date('" + data + "', '%d/%m/%Y')";
+					dateTimeToStringSQL = "to_date('" + data + "', 'DD/MM/YYYY HH:MI:SS')";
 					break;
 				case TipusBaseDeDades.Acces:
-					dateTimeToStringSQL = "Format (#" + data + "#, \"dd/mm/yyyy\")";
+					dateTimeToStringSQL = "Format (#" + data + "#, \"dd/mm/yyyy hh:mm:ss\")";
 					break;
 			}
 			return dateTimeToStringSQL;
