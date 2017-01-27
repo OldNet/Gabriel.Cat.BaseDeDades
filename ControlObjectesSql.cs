@@ -32,11 +32,14 @@ namespace Gabriel.Cat
 		Semaphore semaforActualitzacions;
 		string[] creates;
 		string[] tablas;
-		public ControlObjectesSql(BaseDeDades baseDeDades, StringCreate[] creates)
+		public ControlObjectesSql(BaseDeDades baseDeDades, StringCreate[] creates,bool restaurarTotesDades=true)
 		{
-            CreatesSql = new string[creates.Length];
+            string[] createsSql;
+            createsSql = new string[creates.Length];
             for (int i = 0; i < creates.Length; i++)
-                CreatesSql[i] = creates[i](baseDeDades.TipusBD);
+                createsSql[i] = creates[i](baseDeDades.TipusBD);
+
+            CreatesSql = createsSql;
 			this.baseDeDades = baseDeDades;
 			baseDeDades.Conecta();
 			controlObj = new LlistaOrdenada<ulong, ObjecteSql>();
@@ -46,15 +49,16 @@ namespace Gabriel.Cat
 			temporitzadorActualitzacions.Elapsed += new System.Timers.ElapsedEventHandler(ComprovaActualitzacionsEvent);
 			semaforActualitzacions = new Semaphore(1, 1);
 			Creates();
-            Restaurar();
+            if(restaurarTotesDades)
+               Restaurar();
 		}
 
-		public ControlObjectesSql(TipusBaseDeDades tipusBD, StringCreate[] creates)
-			: this(DonamBD(tipusBD), creates)
+		public ControlObjectesSql(TipusBaseDeDades tipusBD, StringCreate[] creates, bool restaurarTotesDades = true)
+			: this(DonamBD(tipusBD), creates,restaurarTotesDades)
 		{
 		}
-		public ControlObjectesSql(StringCreate[] creates)
-			: this(TipusBaseDeDades.MySql, creates)
+		public ControlObjectesSql(StringCreate[] creates, bool restaurarTotesDades = true)
+			: this(TipusBaseDeDades.MySql, creates,restaurarTotesDades)
 		{
 		}
 		protected BaseDeDades BaseDeDades {
