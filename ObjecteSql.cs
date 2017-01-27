@@ -209,6 +209,18 @@ namespace Gabriel.Cat
         {
             CanviData(enumCaluCanvi.ToString(), data);
         }
+        public static string DoubleToString(TipusBaseDeDades tipusBD, int precicion)
+        {
+            string doubleString = "";
+            switch(tipusBD)
+            {
+                case TipusBaseDeDades.Acces: doubleString = "doube";break;
+                case TipusBaseDeDades.MySql: 
+                case TipusBaseDeDades.Oracle: doubleString = "float("+precicion+")"; break;
+            }
+            return doubleString;
+        }
+
         /// <summary>
         /// Dona d'alta el canvi en format mysql
         /// </summary>

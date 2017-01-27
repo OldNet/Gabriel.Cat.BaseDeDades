@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace Gabriel.Cat
 {
-	public enum TempsEnMiliSegons:ulong
+	public enum TempsEnMiliSegons:long
 	{
 		segon = 1000,
 		minut = segon * 60,
@@ -20,6 +20,7 @@ namespace Gabriel.Cat
 		any = mes * 12,
 
 	}
+    public delegate string StringCreate(TipusBaseDeDades bdDesti);
 	public delegate void ObjecteNouEventHandler(ObjecteSql objNew);
 	public  abstract class ControlObjectesSql : IEnumerable<ObjecteSql>
 	{
@@ -31,9 +32,11 @@ namespace Gabriel.Cat
 		Semaphore semaforActualitzacions;
 		string[] creates;
 		string[] tablas;
-		public ControlObjectesSql(BaseDeDades baseDeDades, string[] creates)
+		public ControlObjectesSql(BaseDeDades baseDeDades, StringCreate[] creates)
 		{
-            CreatesSql = creates;
+            CreatesSql = new string[creates.Length];
+            for (int i = 0; i < creates.Length; i++)
+                CreatesSql[i] = creates[i](baseDeDades.TipusBD);
 			this.baseDeDades = baseDeDades;
 			baseDeDades.Conecta();
 			controlObj = new LlistaOrdenada<ulong, ObjecteSql>();
@@ -46,11 +49,11 @@ namespace Gabriel.Cat
             Restaurar();
 		}
 
-		public ControlObjectesSql(TipusBaseDeDades tipusBD, string[] creates)
+		public ControlObjectesSql(TipusBaseDeDades tipusBD, StringCreate[] creates)
 			: this(DonamBD(tipusBD), creates)
 		{
 		}
-		public ControlObjectesSql(string[] creates)
+		public ControlObjectesSql(StringCreate[] creates)
 			: this(TipusBaseDeDades.MySql, creates)
 		{
 		}
