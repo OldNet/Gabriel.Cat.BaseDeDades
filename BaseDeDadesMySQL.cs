@@ -221,6 +221,7 @@ namespace Gabriel.Cat
                     campos[i] = reader.GetName(i);
                 }
                 llistaTaula.Add(campos);
+              
                 foreach (System.Data.Common.DbDataRecord fila in reader)
                 {
                     campos = new string[fila.FieldCount];
