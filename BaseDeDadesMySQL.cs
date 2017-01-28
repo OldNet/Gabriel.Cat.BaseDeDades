@@ -106,58 +106,6 @@ namespace Gabriel.Cat
             return "Database=" + nomBaseDades + ";Data Source=" + ipHost + ";User Id=" + user + ";Password=" + password;
         }
 
-        public override string[,] ConsultaTableDirect(string nomTaula)
-        {
-            MySqlCommand comand;
-            MySqlDataReader reader = null;
-            MiraSiEstaConnectat();
-            semafor.WaitOne();
-            comand = cnMySql.CreateCommand();
-            comand.CommandType = CommandType.TableDirect;
-            comand.CommandText = nomTaula;
-            string[] campos = null;
-            System.Collections.Generic.List<string[]> llistaTaula = null;
-            string[,] taula = new string[0, 0];
-
-            try
-            {
-                reader = comand.ExecuteReader();
-                llistaTaula = new System.Collections.Generic.List<string[]>();
-                //poso el nom de les columnes
-                campos = new string[reader.FieldCount];
-                for (int i = 0; i < campos.Length; i++)
-                    campos[i] = reader.GetName(i);
-                llistaTaula.Add(campos);
-                //poso les files
-                foreach (System.Data.Common.DbDataRecord fila in reader)
-                {
-                    campos = new string[fila.FieldCount];
-                    for (int i = 0; i < campos.Length; i++)
-                        campos[i] = fila.GetValue(i).ToString();
-                    llistaTaula.Add(campos);
-                }
-                /// <summary>
-                /// Pone los valores en la matriz en su sitio
-                /// </summary>
-                taula = new string[llistaTaula.Count, llistaTaula[0].Length];
-                for (int y = 0; y < llistaTaula.Count; y++)
-                    for (int x = 0; x < llistaTaula[0].Length; x++)
-                        taula[y, x] = llistaTaula[y][x];
-            }
-            catch { }
-            finally
-            {
-                semafor.Release();
-                if (reader != null)
-                    reader.Close();
-            }
-            if (reader != null)
-                if (!reader.IsClosed)
-                    throw new BDException("");
-
-            return taula;
-        }
-
         private void MiraSiEstaConnectat()
         {
             if (!EstaConectada)
@@ -166,18 +114,43 @@ namespace Gabriel.Cat
             }
         }
 
-        public override string ConsultaSQL(string SQL)
+        public override string[,] ConsultaSQL(string sql)
+        {//Camps,Files
+            MySqlDataReader readerResult = GetResultadoSentenciaSql(sql);
+            string[,] comlumsAndRows;
+            int filaActual;
+            if (readerResult == null)
+                comlumsAndRows = new string[0, 0];
+            else
+            {
+                filaActual = 0;
+                comlumsAndRows = new string[readerResult.FieldCount, readerResult.RecordsAffected];//mirar si se obtiene las filas con RecordsAffected
+                do
+                {
+                    for (int i = 0; i < readerResult.FieldCount; i++)
+                        comlumsAndRows[i, filaActual] = readerResult[i].ToString();
+                    filaActual++;
+                } while (readerResult.NextResult());
+            }
+            return comlumsAndRows;
+        }
+        public override string ConsultaSQLLinea(string sql)
         {
+            return GetResultadoSentenciaSql(sql)?.ToString();
+        }
+        public MySqlDataReader GetResultadoSentenciaSql(string sql)
+        {
+
             MySqlCommand comand;
-            string resultado = null;
+            MySqlDataReader reader;
             semafor.WaitOne();
             MiraSiEstaConnectat();
             comand = cnMySql.CreateCommand();
-            comand.CommandText = SQL;
+            comand.CommandText = sql;
             comand.CommandType = CommandType.Text;
             try
             {
-                resultado = comand.ExecuteScalar().ToString();//da un numero que es el resultado de una funcion
+                reader = comand.ExecuteReader();
             }
             catch (Exception m)
             {
@@ -193,39 +166,38 @@ namespace Gabriel.Cat
             {
                 semafor.Release();
             }
-            return resultado;
+            return reader;
 
         }
 
-        public override string[,] ConsultaStoredProcedure(string nomProcediment, IEnumerable<Parametre> parametres)
+        public override string[,] ConsultaStoredProcedure(string nomProcediment, IList<Parametre> parametres)
         {
             MySqlParameter msqlP;
             List<MySqlParameter> parametresMySql = new List<MySqlParameter>();
-            List<Parametre> parametresList = new List<Parametre>(parametres);
 
-            for (int i = 0; i < parametresList.Count; i++)
+            for (int i = 0; i < parametres.Count; i++)
             {
                 msqlP = new MySqlParameter();
-                switch (parametresList.ElementAt(i).direccio)
+                switch (parametres[i].direccio)
                 {
                     case DireccioParametre.IN: msqlP.Direction = ParameterDirection.Input; break;
                     case DireccioParametre.INOUT: msqlP.Direction = ParameterDirection.InputOutput; break;
                     case DireccioParametre.OUT: msqlP.Direction = ParameterDirection.Output; break;
                 }
-                switch (parametresList.ElementAt(i).tipus)
+                switch (parametres[i].tipus)
                 {
                     case TipusParametres.Cursor: msqlP.MySqlDbType = MySqlDbType.DateTime; break;//s'han de acabar de posar pero no calen per l'exercici
                     case TipusParametres.Integer: msqlP.MySqlDbType = MySqlDbType.Int32; break;
                 }
-                msqlP.ParameterName = parametresList.ElementAt(i).nom;
-                if (parametresList.ElementAt(i).direccio != DireccioParametre.OUT)
-                    msqlP.Value = parametresList.ElementAt(i).valor;
+                msqlP.ParameterName = parametres[i].nom;
+                if (parametres[i].direccio != DireccioParametre.OUT)
+                    msqlP.Value = parametres[i].valor;
                 parametresMySql.Add(msqlP);
             }
             return ConsultaStoredProcedure(nomProcediment, parametresMySql);
         }
 
-        public string[,] ConsultaStoredProcedure(string nomProcediment, IEnumerable<MySqlParameter> parametres)
+        public string[,] ConsultaStoredProcedure(string nomProcediment, IList<MySqlParameter> parametres)
         {
             MySqlDataReader reader = null;
             MySqlCommand comand = cnMySql.CreateCommand();
@@ -234,9 +206,9 @@ namespace Gabriel.Cat
             string[,] taulaProcediment=null;
             semafor.WaitOne();
             comand.CommandType = CommandType.StoredProcedure;
-            foreach (MySqlParameter paramatre in parametres)
+            for (int i=0;i<parametres.Count;i++)
             {
-                comand.Parameters.Add(paramatre);
+                comand.Parameters.Add(parametres[i]);
             }
             comand.CommandText = nomProcediment;
             try
@@ -279,49 +251,9 @@ namespace Gabriel.Cat
             get { return cnMySql.State.Equals(ConnectionState.Open); }
         }
 
-        public override bool ConsultaSiEsPot(string sql)//mirar si lo hace bien
-        {
-            bool esPot = false;
-            MySqlCommand comand;
-            semafor.WaitOne();
-            MiraSiEstaConnectat();
-            comand = cnMySql.CreateCommand();
-            comand.CommandText = sql;
-            comand.CommandType = CommandType.Text;
-            try
-            {
-                esPot = comand.ExecuteReader().FieldCount != 0;//da un numero que es el resultado de una funcion
-            }
-            catch { }
-            finally
-            {
-                semafor.Release();
-            }
-            return esPot;
-
-        }
-        public override bool CompruebaSiFunciona(string sql)
-        {
-            bool existeix = false;
-            semafor.WaitOne();
-            MiraSiEstaConnectat();
-            var comand = cnMySql.CreateCommand();
-            comand.CommandText = sql;
-            comand.CommandType = CommandType.Text;
-            try
-            {
-                existeix = comand.ExecuteReader().FieldCount == 1;//da un numero que es el resultado de una funcion
-            }
-            catch { }
-            finally
-            {
-                semafor.Release();
-            }
-            return existeix;
-        }
         public override string ConsultaUltimID()
          {
-             return ConsultaSQL("select last_insert_id();");
+             return ConsultaSQLLinea("select last_insert_id();");
          }
         
     }

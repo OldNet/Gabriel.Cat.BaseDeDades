@@ -62,10 +62,20 @@ namespace Gabriel.Cat
                }
         }
  
-        public abstract string[,] ConsultaTableDirect(string nomTaula);
-        public abstract string ConsultaSQL(string sql);
-        public abstract bool ConsultaSiEsPot(string sql);
-        public abstract bool CompruebaSiFunciona(string sql);
+        public  string[,] ConsultaTableDirect(string nomTaula)
+        {     
+            return ConsultaSQL("select * from " + nomTaula + ";");
+        }
+        public abstract string ConsultaSQLLinea(string sql);
+        public abstract string[,] ConsultaSQL(string sql);
+        public  bool ConsultaSiEsPot(string sql)
+        {
+            return ConsultaSQL(sql).Length >= 1;
+        }
+        public  bool CompruebaSiFunciona(string sql)
+        {
+            return ConsultaSQL(sql).Length != 0;
+        }
         public bool ExisteixTaula(string nomTaula)
         {
         	return ConsultaTableDirect(nomTaula).GetLength(DimensionMatriz.Fila)!=0;
@@ -81,16 +91,16 @@ namespace Gabriel.Cat
         /// 
         /// <param name="parametres"></param>
         /// <returns>si retorna null es que no ho pot fer</returns>
-        public abstract string[,] ConsultaStoredProcedure(string nomProcediment,IEnumerable<Parametre> parametres);
+        public abstract string[,] ConsultaStoredProcedure(string nomProcediment,IList<Parametre> parametres);
         public string DescTable(string tableName)
         {
-            return ConsultaSQL("desc " + tableName + ";");
+            return ConsultaSQLLinea("desc " + tableName + ";");
         }
         public void DropTable(string tableName)
         {
             try
             {
-                ConsultaSQL("drop " + tableName + ";");
+                ConsultaSQLLinea("drop " + tableName + ";");
             }
             catch { }
         }

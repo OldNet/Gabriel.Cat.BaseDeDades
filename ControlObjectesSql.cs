@@ -111,7 +111,7 @@ namespace Gabriel.Cat
 			if (objSql != null)
 				if (!controlObj.ContainsKey(objSql.IdIntern)) {
 				try {
-					baseDeDades.ConsultaSQL(objSql.StringInsertSql(baseDeDades.TipusBD));//si peta no lo pone...
+					baseDeDades.ConsultaSQLLinea(objSql.StringInsertSql(baseDeDades.TipusBD));//si peta no lo pone...
 					if (objSql is ObjecteSqlIdAuto) {
 						objSql.PrimaryKey = baseDeDades.ConsultaUltimID();
 						objSql.DessaCanvis();
@@ -135,28 +135,28 @@ namespace Gabriel.Cat
 				}
 			}
 		}
-		public void Afegir(IEnumerable<ObjecteSql> objectesSql)
+		public void Afegir(IList<ObjecteSql> objectesSql)
 		{
 			if (objectesSql != null)
-				foreach (ObjecteSql obj in objectesSql)
-					Afegir(obj);
+				for(int i=0;i<objectesSql.Count;i++)
+					Afegir(objectesSql[i]);
 		}
 		public void Treu(ObjecteSql objSql)
 		{
 			if (objSql != null)
 				Treu(objSql.IdIntern);
 		}
-		public void Treu(IEnumerable<ObjecteSql> objectesSql)
+		public void Treu(IList<ObjecteSql> objectesSql)
 		{
 			if (objectesSql != null)
-				foreach (ObjecteSql obj in objectesSql)
-					Treu(obj);
-		}
+                for (int i = 0; i < objectesSql.Count; i++)
+                    Treu(objectesSql[i]);
+        }
 		public void Treu(ulong idInternObjSql)
 		{
 			if (controlObj.ContainsKey(idInternObjSql)) {
 				try {
-					baseDeDades.ConsultaSQL(controlObj[idInternObjSql].StringDeleteSql());//elimina de la base de dades,si peta no el treu...
+					baseDeDades.ConsultaSQLLinea(controlObj[idInternObjSql].StringDeleteSql());//elimina de la base de dades,si peta no el treu...
 					controlObj[idInternObjSql].Baixa -= new ObjecteSqlEventHandler(Treu);
 					controlObj[idInternObjSql].Actualitzat -= ComprovaActualitzacions;
 					controlObj[idInternObjSql].Alta += new ObjecteSqlEventHandler(Afegir);
@@ -191,7 +191,7 @@ namespace Gabriel.Cat
             //por probar
 			for (int i = 0; i < creates.Length; i++)
               if (!BaseDeDades.ExisteixTaula(tablas[i]))
-                     BaseDeDades.ConsultaSQL(creates[i]);
+                     BaseDeDades.ConsultaSQLLinea(creates[i]);
 
 		}
 		public  void Drops()
@@ -295,7 +295,7 @@ namespace Gabriel.Cat
 			if (upDate != null) {
 				try {
 					obj.Actualitzat -= ComprovaActualitzacions;
-					baseDeDades.ConsultaSQL(upDate);
+					baseDeDades.ConsultaSQLLinea(upDate);
 					obj.DessaCanvis();
 					
 				} catch (SQLException m) {//mirar si hace falta el if...

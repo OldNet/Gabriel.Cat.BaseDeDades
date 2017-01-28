@@ -110,58 +110,36 @@ namespace Gabriel.Cat
         }
 
 
-        public override string[,] ConsultaTableDirect(string nomTaula)
-        {
-            OleDbDataReader reader;
-            OleDbCommand comand;
-            string[] campos;
-            semafor.WaitOne();
-            ComprovaConnexio();
-            comand = cnOleDb.CreateCommand();
-            campos = null;
-            comand.CommandType = CommandType.TableDirect;
-            comand.CommandText = nomTaula;
-            List<string[]> llistaTaula = null;
-            string[,] taula = new string[0, 0];
-            try
+        
+        public override string[,] ConsultaSQL(string sql)
+        {//Camps,Files
+            OleDbDataReader readerResult = GetResultadoSentenciaSql(sql);
+            string[,] comlumsAndRows;
+            int filaActual;
+            if (readerResult == null)
+                comlumsAndRows = new string[0, 0];
+            else
             {
-                reader = comand.ExecuteReader();
-                llistaTaula = new List<string[]>();
-                //poso el nom de les columnes
-                campos = new string[reader.FieldCount];
-                for (int i = 0; i < campos.Length; i++)
-                    campos[i] = reader.GetName(i);
-                llistaTaula.Add(campos);
-                //poso les files
-                foreach (System.Data.Common.DbDataRecord fila in reader)
+                filaActual = 0;
+                comlumsAndRows = new string[readerResult.FieldCount, readerResult.RecordsAffected];//mirar si se obtiene las filas con RecordsAffected
+                do
                 {
-                    campos = new string[fila.FieldCount];
-                    for (int i = 0; i < campos.Length; i++)
-                        campos[i] = fila.GetValue(i).ToString();
-                    llistaTaula.Add(campos);
-                }
-
-                reader.Close();
-                /// <summary>
-                /// Pone los valores en la matriz en su sitio
-                /// </summary>
-                taula = new string[llistaTaula.Count, llistaTaula[0].Length];
-                for (int y = 0; y < llistaTaula.Count; y++)
-                    for (int x = 0; x < llistaTaula[0].Length; x++)
-                        taula[y, x] = llistaTaula[y][x];
+                    for (int i = 0; i < readerResult.FieldCount; i++)
+                        comlumsAndRows[i, filaActual]=readerResult[i].ToString();
+                    filaActual++;
+                } while (readerResult.NextResult());
             }
-            catch { }
-            finally
-            {
-                semafor.Release();
-            }
-            return taula;
+            return comlumsAndRows;
         }
-
-        public override string ConsultaSQL(string sql)
+        public override string ConsultaSQLLinea(string sql)
+        {
+            return GetResultadoSentenciaSql(sql)?.ToString(); 
+        }
+        public  OleDbDataReader GetResultadoSentenciaSql(string sql)
         {
             OleDbCommand comand;
-            string resultado=null;
+            OleDbDataReader resultado=null;
+
             semafor.WaitOne();
             ComprovaConnexio();
             if (EstaConectada)
@@ -171,21 +149,22 @@ namespace Gabriel.Cat
                 comand.CommandType = CommandType.Text;
                 try
                 {
-                    resultado = comand.ExecuteReader().ToString();//da la select
+                    resultado = comand.ExecuteReader();
+
                 }
                 catch (Exception m)
                 {
-                    if (m.Message.ToString() == missatgeErrorPrimaryKeyDuplicated && sql.Contains("pdate"))
+                    if (m.Message.ToString() == missatgeErrorPrimaryKeyDuplicated && sql.ToLower().Contains("pdate"))
                     {
                         semafor.Release();
                         throw new BDException("PrimaryKey is duplicated");
                     }
                 }
             }
+            else resultado = null;
             semafor.Release();
             return resultado;
         }
-
         private void ComprovaConnexio()
         {
             if (!EstaConectada)
@@ -198,7 +177,7 @@ namespace Gabriel.Cat
 
 
 
-        public override string[,] ConsultaStoredProcedure(string nomProcediment, IEnumerable<Parametre> parametres)
+        public override string[,] ConsultaStoredProcedure(string nomProcediment, IList<Parametre> parametres)
         {
             //no en te
             return new string[0,0];
@@ -209,52 +188,10 @@ namespace Gabriel.Cat
             get { return cnOleDb.State == ConnectionState.Open; }
         }
 
-        public override bool ConsultaSiEsPot(string sql)
-        {
-            bool esPot = false;
-            OleDbCommand comand;
-            semafor.WaitOne();
-            ComprovaConnexio();
-            comand = cnOleDb.CreateCommand();
-            comand.CommandText = sql;
-            comand.CommandType = CommandType.Text;
-            try
-            {
-                esPot = comand.ExecuteReader().FieldCount != 0;//da un numero que es el resultado de una funcion
-            }
-            catch { }
-            finally
-            {
 
-                semafor.Release();
-            }
-            return esPot;
-
-        }
-        public override bool CompruebaSiFunciona(string sql)
-        {
-            bool existeix = false;
-            semafor.WaitOne();
-            ComprovaConnexio();
-            var comand = cnOleDb.CreateCommand();
-            comand.CommandText = sql;
-            comand.CommandType = CommandType.Text;
-            try
-            {
-
-                var r = comand.ExecuteReader();
-                existeix = r.HasRows;
-            }
-            catch { }
-            finally
-            {
-                semafor.Release();
-            }
-            return existeix;
-        }
         public override string ConsultaUltimID()
         {
-            return ConsultaSQL("Select @@Identity");
+            return ConsultaSQLLinea("Select @@Identity");
         }
     }
 }
