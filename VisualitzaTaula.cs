@@ -10,7 +10,15 @@ using System.Windows.Forms;
 using Gabriel.Cat.Extension;
 namespace Gabriel.Cat
 {
-    //hacer version para Wpf
+    //para verlo en wpf se usa
+    /*
+     *1.       añadir la dll de windows forms :D
+      2.       xmlns:wfBd="clr-namespace:Gabriel.Cat;assembly=Gabriel.Cat.BaseDeDades"
+      3.
+               <WindowsFormsHost >
+                     <wfBd:VisualitzaTaula x:Name="vtTaulaAVeure"/>
+               </WindowsFormsHost>
+         */
     public partial class VisualitzaTaula : UserControl
     {
         BaseDeDades baseDades;
