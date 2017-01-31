@@ -32,26 +32,47 @@ namespace Gabriel.Cat
         }
         public void Visualitza(string nomTaula)
         {
+            nomTaulaActual = nomTaula;
+
+
+            try
+            {
+                VisualitzaSqlResult("select * from " + nomTaula + ";");
+            }
+            catch
+            {
+
+                MessageBox.Show("El nom de la taula no es en  la base de dades " + baseDades);
+            }
+            
+        }
+        public void VisualitzaSqlResult(string sql)
+        {
+
+            VisualitzaTaulaResult(baseDades.ConsultaSQL(sql));
+              
+        }
+
+        public void VisualitzaTaulaResult(string[,] tabla)
+        {
+            DataGridViewRow row;
+            string[] camps;
+
+
             if (baseDades.EstaConectada)
             {
-                
-                DataGridViewRow row;
-                string[] camps;
-                string[,] taulaDirectLlista;
 
-                nomTaulaActual = nomTaula;
-                taulaDirectLlista = baseDades.ConsultaTableDirect(nomTaula);
                 dgvDadesTaulaConsultada.Rows.Clear();
                 dgvDadesTaulaConsultada.Columns.Clear();
-                if (taulaDirectLlista != null)
+                if (tabla != null)
                 {
-                    camps = taulaDirectLlista.Fila(0);//la primera fila son los nombres de las columnas
+                    camps = tabla.Fila(0);//la primera fila son los nombres de las columnas
 
                     for (int i = 0; i < camps.Length; i++)
                         dgvDadesTaulaConsultada.Columns.Add(camps[i], camps[i]);
-                    for (int j = 1; j < taulaDirectLlista.GetLength(DimensionMatriz.Fila); j++)
+                    for (int j = 1; j < tabla.GetLength(DimensionMatriz.Fila); j++)
                     {//pongo los datos
-                        camps = taulaDirectLlista.Fila(j);
+                        camps = tabla.Fila(j);
                         row = new DataGridViewRow();
                         row.SetValues(camps.ToList<string>());
                         row.CreateCells(dgvDadesTaulaConsultada, camps);
@@ -60,9 +81,7 @@ namespace Gabriel.Cat
                     }
 
                 }
-                else
-                    MessageBox.Show("El nom de la taula no es en  la base de dades " + baseDades);
-
+                else throw new Exception("la sentencia sql no devuelve filas o es incorrecta");
             }
         }
     }
