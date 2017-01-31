@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.IO;
+using Gabriel.Cat.Extension;
 
 namespace Gabriel.Cat
 {
@@ -14,11 +15,10 @@ namespace Gabriel.Cat
 
         OleDbConnection cnOleDb;
         Semaphore semafor;
-        public BaseDeDadesAcces():this(DonamStringConnection("BaseDeDadesAcces/bdDades.mdb")){}
+        public BaseDeDadesAcces(int versionBD = 12) :this(DonamStringConnection("BaseDeDadesAcces/bdDades.mdb",versionBD)){}
         public BaseDeDadesAcces(string connectionString)
         {
 
-            nomBaseDades = "Acces";
             this.connectionString = connectionString;
             semafor = new Semaphore(1, 1);
         }
@@ -33,7 +33,7 @@ namespace Gabriel.Cat
                 cnOleDb = new OleDbConnection(connectionString);
                 if (!File.Exists(cnOleDb.DataSource))
                 {
-                    throw new Exception("No es pot conectar amb la base de dades per que no existix :" + cnOleDb.DataSource);
+                    throw new BDException("No es pot conectar amb la base de dades per que no existix :" + cnOleDb.DataSource);
                 }
                 cnOleDb.Open();
 
@@ -49,7 +49,7 @@ namespace Gabriel.Cat
 
         }
 
-        #region implemented abstract members of BaseDeDades
+
 
 
         public override TipusBaseDeDades TipusBD
@@ -59,9 +59,6 @@ namespace Gabriel.Cat
                 return TipusBaseDeDades.Acces;
             }
         }
-
-
-        #endregion
 
         public override void Desconecta()
         {
@@ -82,9 +79,9 @@ namespace Gabriel.Cat
         /// </summary>
         /// <param name="direccioBaseDades"></param>
         /// <returns></returns>
-        public static string DonamStringConnection(string direccioBaseDades)
+        public static string DonamStringConnection(string direccioBaseDades, int versionBD = 12)
         {
-            return DonamStringConnection(direccioBaseDades, "");
+            return DonamStringConnection(direccioBaseDades, "",versionBD);
         }
         /// <summary>
         /// dona la conexio string amb user Admin
@@ -92,9 +89,9 @@ namespace Gabriel.Cat
         /// <param name="direccioBaseDades"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        public static string DonamStringConnection(string direccioBaseDades, string password)
+        public static string DonamStringConnection(string direccioBaseDades, string password, int versionBD = 12)
         {
-            return DonamStringConnection(direccioBaseDades, "admin", password);
+            return DonamStringConnection(direccioBaseDades, "admin", password,versionBD);
         }
         /// <summary>
         /// dona la conexio string
@@ -103,38 +100,43 @@ namespace Gabriel.Cat
         /// <param name="user"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        public static string DonamStringConnection(string direccioBaseDades, string user, string password)
+        public static string DonamStringConnection(string direccioBaseDades, string user, string password,int versionBD=12)
         {
-            return "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + direccioBaseDades + ";User Id=" + user + ";Password=" + password + ";";
+            return "Provider=Microsoft.ACE.OLEDB."+versionBD+".0;Data Source=" + direccioBaseDades + ";User Id=" + user + ";Password=" + password + ";";
             //   return "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + direccioBaseDades + ";User Id=" + user + ";Password=" + password + ";";
         }
 
 
         
-        public override string[,] ConsultaSQL(string sql)
+        public override string[,] ConsultaSQL(string sql,bool addColumnNames=true)
         {//Camps,Files
             OleDbDataReader readerResult = GetResultadoSentenciaSql(sql);
-            string[,] comlumsAndRows;
-            int filaActual;
-            if (readerResult == null)
-                comlumsAndRows = new string[0, 0];
-            else
+            List<string[]> comlumsAndRows;
+            string[] filaActual;
+            comlumsAndRows = new List<string[]>();
+            if (readerResult != null)
             {
-                filaActual = 0;
-                comlumsAndRows = new string[readerResult.FieldCount, readerResult.RecordsAffected];//mirar si se obtiene las filas con RecordsAffected
-                do
+                //añado headers
+                if (addColumnNames)
                 {
+                    filaActual = new string[readerResult.FieldCount];
                     for (int i = 0; i < readerResult.FieldCount; i++)
-                        comlumsAndRows[i, filaActual]=readerResult[i].ToString();
-                    filaActual++;
-                } while (readerResult.NextResult());
+                        filaActual[i] = readerResult.GetName(i);
+                    comlumsAndRows.Add(filaActual);
+                }
+                if(readerResult.HasRows)
+                while (readerResult.Read())
+                {//añado filas
+                    filaActual = new string[readerResult.FieldCount];
+                    for (int i = 0; i < readerResult.FieldCount; i++)
+                        filaActual[i]=readerResult.GetValue(i).ToString();
+                    comlumsAndRows.Add(filaActual);
+                }
+                readerResult.Close();
             }
-            return comlumsAndRows;
+            return comlumsAndRows.ToMatriu();
         }
-        public override string ConsultaSQLLinea(string sql)
-        {
-            return GetResultadoSentenciaSql(sql)?.ToString(); 
-        }
+
         public  OleDbDataReader GetResultadoSentenciaSql(string sql)
         {
             OleDbCommand comand;
@@ -177,10 +179,9 @@ namespace Gabriel.Cat
 
 
 
-        public override string[,] ConsultaStoredProcedure(string nomProcediment, IList<Parametre> parametres)
+        public override string[,] ConsultaStoredProcedure(string nomProcediment, IList<Parametre> parametres, bool addColumnNames = true)
         {
-            //no en te
-            return new string[0,0];
+            throw new BDException("Access database has not StoreProcedures support! ");
         }
 
         public override bool EstaConectada
@@ -191,7 +192,7 @@ namespace Gabriel.Cat
 
         public override string ConsultaUltimID()
         {
-            return ConsultaSQLLinea("Select @@Identity");
+            return ConsultaSQL("Select @@Identity",false)[0,0];
         }
     }
 }

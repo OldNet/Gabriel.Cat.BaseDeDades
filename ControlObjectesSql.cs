@@ -111,7 +111,7 @@ namespace Gabriel.Cat
 			if (objSql != null)
 				if (!controlObj.ContainsKey(objSql.IdIntern)) {
 				try {
-					baseDeDades.ConsultaSQLLinea(objSql.StringInsertSql(baseDeDades.TipusBD));//si peta no lo pone...
+					baseDeDades.ConsultaSQL(objSql.StringInsertSql(baseDeDades.TipusBD));//si peta no lo pone...
 					if (objSql is ObjecteSqlIdAuto) {
 						objSql.PrimaryKey = baseDeDades.ConsultaUltimID();
 						objSql.DessaCanvis();
@@ -156,7 +156,7 @@ namespace Gabriel.Cat
 		{
 			if (controlObj.ContainsKey(idInternObjSql)) {
 				try {
-					baseDeDades.ConsultaSQLLinea(controlObj[idInternObjSql].StringDeleteSql());//elimina de la base de dades,si peta no el treu...
+					baseDeDades.ConsultaSQL(controlObj[idInternObjSql].StringDeleteSql());//elimina de la base de dades,si peta no el treu...
 					controlObj[idInternObjSql].Baixa -= new ObjecteSqlEventHandler(Treu);
 					controlObj[idInternObjSql].Actualitzat -= ComprovaActualitzacions;
 					controlObj[idInternObjSql].Alta += new ObjecteSqlEventHandler(Afegir);
@@ -191,7 +191,7 @@ namespace Gabriel.Cat
             //por probar
 			for (int i = 0; i < creates.Length; i++)
               if (!BaseDeDades.ExisteixTaula(tablas[i]))
-                     BaseDeDades.ConsultaSQLLinea(creates[i]);
+                     BaseDeDades.ConsultaSQL(creates[i]);
 
 		}
 		public  void Drops()
@@ -295,7 +295,7 @@ namespace Gabriel.Cat
 			if (upDate != null) {
 				try {
 					obj.Actualitzat -= ComprovaActualitzacions;
-					baseDeDades.ConsultaSQLLinea(upDate);
+					baseDeDades.ConsultaSQL(upDate);
 					obj.DessaCanvis();
 					
 				} catch (SQLException m) {//mirar si hace falta el if...

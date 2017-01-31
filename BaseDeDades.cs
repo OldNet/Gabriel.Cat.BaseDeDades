@@ -26,9 +26,12 @@ namespace Gabriel.Cat
 
     public abstract class BaseDeDades
     {
+        protected BaseDeDades()
+        {
+            nomBaseDades = TipusBD.ToString();
+        }
         protected string connectionString;
         protected string nomBaseDades;
-        public const char CaracterSeparacionPorDefectoSelect = ' ';//por mirar
         public abstract bool Conecta();
 
 		public abstract TipusBaseDeDades TipusBD {
@@ -55,7 +58,7 @@ namespace Gabriel.Cat
         public string NomBaseDeDades
         {
             get { return nomBaseDades; }
-            set { if (value != "")
+            set { if (!string.IsNullOrEmpty(value))
                      nomBaseDades = value; 
                  else 
                      throw new Exception("Es nessari un nom"); 
@@ -66,19 +69,20 @@ namespace Gabriel.Cat
         {     
             return ConsultaSQL("select * from " + nomTaula + ";");
         }
-        public abstract string ConsultaSQLLinea(string sql);
-        public abstract string[,] ConsultaSQL(string sql);
-        public  bool ConsultaSiEsPot(string sql)
-        {
-            return ConsultaSQL(sql).Length >= 1;
-        }
-        public  bool CompruebaSiFunciona(string sql)
-        {
-            return ConsultaSQL(sql).Length != 0;
-        }
+        public abstract string[,] ConsultaSQL(string sql,bool addColumnsNames=true);
+
         public bool ExisteixTaula(string nomTaula)
         {
-        	return ConsultaTableDirect(nomTaula).GetLength(DimensionMatriz.Fila)!=0;
+            bool existeix = false;
+            try
+            {
+                ConsultaTableDirect(nomTaula);
+                existeix = true;
+            }catch
+            {
+
+            }
+            return existeix;
         }
         public abstract string ConsultaUltimID();//com es una sentencia sql diferent a cada BD no puc fer-hi mes...
 
@@ -91,16 +95,32 @@ namespace Gabriel.Cat
         /// 
         /// <param name="parametres"></param>
         /// <returns>si retorna null es que no ho pot fer</returns>
-        public abstract string[,] ConsultaStoredProcedure(string nomProcediment,IList<Parametre> parametres);
-        public string DescTable(string tableName)
+        public abstract string[,] ConsultaStoredProcedure(string nomProcediment,IList<Parametre> parametres,bool addColumnNames=true);
+        public string[,] DescTable(string tableName)
         {
-            return ConsultaSQLLinea("desc " + tableName + ";");
+            return ConsultaSQL("desc " + tableName + ";");
         }
+        /// <summary>
+        /// Elimina la tabla
+        /// </summary>
+        /// <param name="tableName"></param>
         public void DropTable(string tableName)
         {
             try
             {
-                ConsultaSQLLinea("drop " + tableName + ";");
+                ConsultaSQL("drop table " + tableName + ";");
+            }
+            catch { }
+        }
+        /// <summary>
+        /// Elimina todas las filas de la tabla
+        /// </summary>
+        /// <param name="tableName"></param>
+        public void TruncateTable(string tableName)
+        {
+            try
+            {
+                ConsultaSQL("truncate table " + tableName + ";");
             }
             catch { }
         }

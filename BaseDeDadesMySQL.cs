@@ -22,7 +22,6 @@ namespace Gabriel.Cat
 
         public BaseDeDadesMySQL(string connectionString= "Database=test;Data Source=localhost;User Id=root;Password=")
         {
-            nomBaseDades = "MySQL";
             this.connectionString = connectionString;
             semafor = new Semaphore(1, 1);
         }
@@ -46,7 +45,7 @@ namespace Gabriel.Cat
 
         }
 
-        #region implemented abstract members of BaseDeDades
+
         public override TipusBaseDeDades TipusBD
         {
             get
@@ -54,7 +53,7 @@ namespace Gabriel.Cat
                 return TipusBaseDeDades.MySql;
             }
         }
-        #endregion
+
         public override void Desconecta()
         {
 
@@ -114,30 +113,41 @@ namespace Gabriel.Cat
             }
         }
 
-        public override string[,] ConsultaSQL(string sql)
+        public override string[,] ConsultaSQL(string sql,bool addColumnNames=true)
         {//Camps,Files
             MySqlDataReader readerResult = GetResultadoSentenciaSql(sql);
-            string[,] comlumsAndRows;
-            int filaActual;
-            if (readerResult == null)
-                comlumsAndRows = new string[0, 0];
-            else
+            List<string[]> comlumsAndRows;
+            string[] filaActual;
+            comlumsAndRows = new List<string[]>();
+            if (readerResult != null)
             {
-                filaActual = 0;
-                comlumsAndRows = new string[readerResult.FieldCount, readerResult.RecordsAffected];//mirar si se obtiene las filas con RecordsAffected
-                do
+                //añado headers
+                if (addColumnNames)
                 {
+                    filaActual = new string[readerResult.FieldCount];
                     for (int i = 0; i < readerResult.FieldCount; i++)
-                        comlumsAndRows[i, filaActual] = readerResult[i].ToString();
-                    filaActual++;
-                } while (readerResult.NextResult());
+                        filaActual[i] = readerResult.GetName(i);
+                    //añado los headers
+                    comlumsAndRows.Add(filaActual);
+                }
+                if (readerResult.HasRows)
+                {
+                    while (readerResult.Read())
+                    {
+                        //añado las filas
+                        filaActual = new string[readerResult.FieldCount];
+
+                        for (int i = 0; i < readerResult.FieldCount; i++)
+                            filaActual[i] = readerResult.GetValue(i).ToString();
+                        comlumsAndRows.Add(filaActual);
+
+                    }
+                }
+                readerResult.Close();
             }
-            return comlumsAndRows;
+            return comlumsAndRows.ToMatriu();
         }
-        public override string ConsultaSQLLinea(string sql)
-        {
-            return GetResultadoSentenciaSql(sql)?.ToString();
-        }
+
         public MySqlDataReader GetResultadoSentenciaSql(string sql)
         {
 
@@ -170,7 +180,7 @@ namespace Gabriel.Cat
 
         }
 
-        public override string[,] ConsultaStoredProcedure(string nomProcediment, IList<Parametre> parametres)
+        public override string[,] ConsultaStoredProcedure(string nomProcediment, IList<Parametre> parametres, bool addColumnNames = true)
         {
             MySqlParameter msqlP;
             List<MySqlParameter> parametresMySql = new List<MySqlParameter>();
@@ -194,18 +204,18 @@ namespace Gabriel.Cat
                     msqlP.Value = parametres[i].valor;
                 parametresMySql.Add(msqlP);
             }
-            return ConsultaStoredProcedure(nomProcediment, parametresMySql);
+            return ConsultaStoredProcedure(nomProcediment, parametresMySql,addColumnNames);
         }
 
-        public string[,] ConsultaStoredProcedure(string nomProcediment, IList<MySqlParameter> parametres)
+        public string[,] ConsultaStoredProcedure(string nomProcediment, IList<MySqlParameter> parametres, bool addColumnNames = true)
         {
             MySqlDataReader reader = null;
             MySqlCommand comand = cnMySql.CreateCommand();
             string[] campos = null;
-            List<string[]> llistaTaula = null;
-            string[,] taulaProcediment=null;
+            List<string[]> llistaTaula;
             semafor.WaitOne();
             comand.CommandType = CommandType.StoredProcedure;
+            llistaTaula = new List<string[]>();
             for (int i=0;i<parametres.Count;i++)
             {
                 comand.Parameters.Add(parametres[i]);
@@ -214,24 +224,25 @@ namespace Gabriel.Cat
             try
             {
                 reader = comand.ExecuteReader();
-                llistaTaula = new List<string[]>();
-                campos = new string[reader.FieldCount];
-                for (int i = 0; i < campos.Length; i++)
+                if (addColumnNames)
                 {
-                    campos[i] = reader.GetName(i);
-                }
-                llistaTaula.Add(campos);
-              
-                foreach (System.Data.Common.DbDataRecord fila in reader)
-                {
-                    campos = new string[fila.FieldCount];
+                    campos = new string[reader.FieldCount];
                     for (int i = 0; i < campos.Length; i++)
                     {
-                        campos[i] = fila.GetValue(i).ToString();
+                        campos[i] = reader.GetName(i);
                     }
                     llistaTaula.Add(campos);
                 }
-                taulaProcediment = llistaTaula.ToMatriu();
+                while(reader.Read())//foreach (System.Data.Common.DbDataRecord fila in reader) mirar si hace lo mismo pero sin el getEnumerator :D
+                {
+                    campos = new string[reader.FieldCount];
+                    for (int i = 0; i < campos.Length; i++)
+                    {
+                        campos[i] = reader.GetValue(i).ToString();
+                    }
+                    llistaTaula.Add(campos);
+                }
+           
             }
             catch
             {
@@ -244,7 +255,7 @@ namespace Gabriel.Cat
                 semafor.Release();
             }
 
-            return taulaProcediment;
+            return llistaTaula.ToMatriu();
         }
 
         public override bool EstaConectada
@@ -254,7 +265,7 @@ namespace Gabriel.Cat
 
         public override string ConsultaUltimID()
          {
-             return ConsultaSQLLinea("select last_insert_id();");
+             return ConsultaSQL("select last_insert_id();",false)[0,0];
          }
         
     }
