@@ -7,7 +7,7 @@ using Oracle.DataAccess.Types;
 using System;
 using System.Collections.Generic;
 
-
+//por rehacer...cuando la necesite la añado y la arreglo...
 namespace Gabriel.Cat
 {
   public  class BaseDeDadesOracle:BaseDeDades

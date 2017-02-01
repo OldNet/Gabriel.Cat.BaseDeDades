@@ -54,6 +54,7 @@ namespace Gabriel.Cat
             }
             
         }
+
         public void VisualitzaSqlResult(string sql)
         {
 

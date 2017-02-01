@@ -26,7 +26,7 @@ namespace Gabriel.Cat
 	{
 
 		public event ObjecteNouEventHandler ObjNou;
-		LlistaOrdenada<ulong, ObjecteSql> controlObj;
+		protected LlistaOrdenada<ulong, ObjecteSql> controlObj;
 		private BaseDeDades baseDeDades;
 		System.Timers.Timer temporitzadorActualitzacions;
 		Semaphore semaforActualitzacions;

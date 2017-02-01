@@ -13,7 +13,7 @@ namespace Gabriel.Cat
 	{
 		Acces,
 		MySql,
-		Oracle
+	//	Oracle
 	}
 	public abstract class ObjecteSql : IComparable<ObjecteSql>
 	{
@@ -140,7 +140,7 @@ namespace Gabriel.Cat
 		#endregion
         protected bool[] AltaCanvis(Type enumType)
         {
-            Enum[] enumADonarDalta =(Enum[]) Enum.GetValues(enumType);
+            Enum[] enumADonarDalta =Enum.GetValues(enumType).Cast<Enum>().ToArray();
             bool[] resultAlta = new bool[enumADonarDalta.Length];
             for (int i = 0; i < enumADonarDalta.Length; i++)
                 resultAlta[i] = AltaCanvi(enumADonarDalta[i]);
@@ -215,8 +215,8 @@ namespace Gabriel.Cat
             switch(tipusBD)
             {
                 case TipusBaseDeDades.Acces: doubleString = "doube";break;
-                case TipusBaseDeDades.MySql: 
-                case TipusBaseDeDades.Oracle: doubleString = "float("+precicion+")"; break;
+                case TipusBaseDeDades.MySql: doubleString = "float("+precicion+")"; break;
+              //  case TipusBaseDeDades.Oracle: 
             }
             return doubleString;
         }
@@ -230,6 +230,29 @@ namespace Gabriel.Cat
 		{
 			CanviData(clauCanvi, data.ToShortDateString());
 		}
+
+        public static string StringAutoIncrement(TipusBaseDeDades tipusBD, Type type)
+        {
+            string strAutoIncrement=null;
+            switch (tipusBD) {
+                case TipusBaseDeDades.MySql:
+            switch (type.AssemblyQualifiedName)
+            {
+                case Serializar.LONGASSEMBLYNAME: strAutoIncrement=" bigint AUTO_INCREMENT";break;
+                case Serializar.INTASSEMBLYNAME: strAutoIncrement = " int AUTO_INCREMENT"; break;
+                    }
+                    break;
+                case TipusBaseDeDades.Acces:
+                    switch (type.AssemblyQualifiedName)
+                    {
+                        default: strAutoIncrement = " AUTOINCREMENT"; break;
+                    }
+                    break;
+               //Oracle no tiene ...tiene secuencias pero se usan distintamente...
+            }
+            return strAutoIncrement;
+        }
+
         protected void CanviData(Enum enumCaluCanvi, string data)
         {
             CanviData(enumCaluCanvi.ToString(), data);
@@ -422,9 +445,9 @@ namespace Gabriel.Cat
 				case TipusBaseDeDades.MySql:
 					dateTimeToStringSQL = "str_to_date('" + data + "', '%d/%m/%Y %H:%i:%s')";
 					break;
-				case TipusBaseDeDades.Oracle:
+			/*	case TipusBaseDeDades.Oracle:
 					dateTimeToStringSQL = "to_date('" + data + "', 'DD/MM/YYYY HH:MI:SS')";
-					break;
+					break;*/
 				case TipusBaseDeDades.Acces:
 					dateTimeToStringSQL = "Format (#" + data + "#, \"dd/mm/yyyy hh:mm:ss\")";
 					break;
