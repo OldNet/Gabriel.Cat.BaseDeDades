@@ -230,28 +230,7 @@ namespace Gabriel.Cat
 		{
 			CanviData(clauCanvi, data.ToShortDateString());
 		}
-
-        public static string StringAutoIncrement(TipusBaseDeDades tipusBD, Type type)
-        {
-            string strAutoIncrement=null;
-            switch (tipusBD) {
-                case TipusBaseDeDades.MySql:
-            switch (type.AssemblyQualifiedName)
-            {
-                case Serializar.LONGASSEMBLYNAME: strAutoIncrement=" bigint AUTO_INCREMENT";break;
-                case Serializar.INTASSEMBLYNAME: strAutoIncrement = " int AUTO_INCREMENT"; break;
-                    }
-                    break;
-                case TipusBaseDeDades.Acces:
-                    switch (type.AssemblyQualifiedName)
-                    {
-                        default: strAutoIncrement = " AUTOINCREMENT"; break;
-                    }
-                    break;
-               //Oracle no tiene ...tiene secuencias pero se usan distintamente...
-            }
-            return strAutoIncrement;
-        }
+    
 
         protected void CanviData(Enum enumCaluCanvi, string data)
         {
@@ -331,8 +310,20 @@ namespace Gabriel.Cat
 				canvisObj[claus[i]] = null;
 			ActualitzaPrimaryKey();
 		}
-		#region sentenciesSQL
-		public string StringInsertSql()
+        public int CompareTo(ObjecteSql other)
+        {
+            return IdIntern.CompareTo(other.IdIntern);
+        }
+        public override bool Equals(object obj)
+        {
+            ObjecteSql other = obj as ObjecteSql;
+            bool iguals = other != null;
+            if (iguals)
+                iguals = other.PrimaryKey == PrimaryKey;
+            return iguals;
+        }
+        #region sentenciesSQL
+        public string StringInsertSql()
 		{
 			return StringInsertSql(tipusBD);
 		}
@@ -454,18 +445,72 @@ namespace Gabriel.Cat
 			}
 			return dateTimeToStringSQL;
 		}
-		public int CompareTo(ObjecteSql other)
-		{
-			return IdIntern.CompareTo(other.IdIntern);
-		}
-		public override bool Equals(object obj)
-		{
-			ObjecteSql other = obj as ObjecteSql;
-			bool iguals = other != null;
-			if (iguals)
-				iguals = other.PrimaryKey == PrimaryKey;
-			return iguals;
-		}
+        public static string StringAutoIncrement(TipusBaseDeDades tipusBD)
+        { return StringAutoIncrement(tipusBD, typeof(long)); }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tipusBD"></param>
+        /// <param name="type">int o long</param>
+        /// <returns>si devuelve null es que no es compatible con el tipo</returns>
+        public static string StringAutoIncrement(TipusBaseDeDades tipusBD, Type type)
+        {
+            string strAutoIncrement = null;
+            switch (tipusBD)
+            {
+                case TipusBaseDeDades.MySql:
+                    switch (type.AssemblyQualifiedName)
+                    {
+                        case Serializar.LONGASSEMBLYNAME: strAutoIncrement = " bigint AUTO_INCREMENT"; break;
+                        case Serializar.INTASSEMBLYNAME: strAutoIncrement = " int AUTO_INCREMENT"; break;
+                            //cuando necesite mas tipos los añado :D
+                    }
+                    break;
+                case TipusBaseDeDades.Acces:
+                    switch (type.AssemblyQualifiedName)
+                    {
+                        case Serializar.INTASSEMBLYNAME: strAutoIncrement = " AUTOINCREMENT"; break;
+                        case Serializar.LONGASSEMBLYNAME: strAutoIncrement = " COUNTER"; break;
+                    }
+                    break;
+                    //Oracle no tiene ...tiene secuencias pero se usan distintamente...
+            }
+            return strAutoIncrement;
+        }
+        public static string StringAutoIncrementReferenceNumber(TipusBaseDeDades tipusBD)
+        {
+            return StringAutoIncrementReferenceNumber(tipusBD, typeof(long));
+        }
+        /// <summary>
+        /// Se usa para saber el tipo de la columna foreing key que hace referencia a una columna id autoincrement
+        /// </summary>
+        /// <param name="tipusBD"></param>
+        /// <param name="type">int o long</param>
+        /// <returns>si devuelve null es que no es compatible con el tipo</returns>
+        public static string StringAutoIncrementReferenceNumber(TipusBaseDeDades tipusBD, Type type)
+        {
+            string strAutoIncrement = null;
+            switch (tipusBD)
+            {
+                case TipusBaseDeDades.MySql:
+                    switch (type.AssemblyQualifiedName)
+                    {
+                        case Serializar.LONGASSEMBLYNAME: strAutoIncrement = " bigint "; break;
+                        case Serializar.INTASSEMBLYNAME: strAutoIncrement = " int "; break;
+                            //cuando necesite mas tipos los añado :D
+                    }
+                    break;
+                case TipusBaseDeDades.Acces:
+                    switch (type.AssemblyQualifiedName)
+                    {
+                        default: strAutoIncrement = " long "; break;//por mirar
+                    }
+                    break;
+                    //Oracle no tiene ...tiene secuencias pero se usan distintamente...
+            }
+            return strAutoIncrement;
+        }
+
 		/// <summary>
 		/// 
 		/// </summary>
