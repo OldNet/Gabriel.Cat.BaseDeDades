@@ -26,7 +26,8 @@ namespace Gabriel.Cat
 	{
 
 		public event ObjecteNouEventHandler ObjNou;
-		protected LlistaOrdenada<ulong, ObjecteSql> controlObj;
+		private LlistaOrdenada<ulong, ObjecteSql> controlObj;
+        private Llista<ulong> idsObjs;
 		private BaseDeDades baseDeDades;
 		System.Timers.Timer temporitzadorActualitzacions;
 		Semaphore semaforActualitzacions;
@@ -38,11 +39,12 @@ namespace Gabriel.Cat
             createsSql = new string[creates.Length];
             for (int i = 0; i < creates.Length; i++)
                 createsSql[i] = creates[i](baseDeDades.TipusBD);
-
+            
             CreatesSql = createsSql;
 			this.baseDeDades = baseDeDades;
 			baseDeDades.Conecta();
-			controlObj = new LlistaOrdenada<ulong, ObjecteSql>();
+            idsObjs = new Llista<ulong>();
+            controlObj = new LlistaOrdenada<ulong, ObjecteSql>();
 			temporitzadorActualitzacions = new System.Timers.Timer();
 			temporitzadorActualitzacions.Interval = (int)TempsEnMiliSegons.hora;
 			temporitzadorActualitzacions.Enabled = true;
@@ -122,6 +124,7 @@ namespace Gabriel.Cat
 					if (!controlObj.ContainsKey(objSql.IdIntern)) {
 						semaforActualitzacions.WaitOne();
 						controlObj.Add(objSql.IdIntern, objSql);
+                            idsObjs.Add(objSql.IdIntern);
 						semaforActualitzacions.Release();
 						try {
 							objSql.Baixa += Treu;
@@ -141,7 +144,72 @@ namespace Gabriel.Cat
 				for(int i=0;i<objectesSql.Count;i++)
 					Afegir(objectesSql[i]);
 		}
-		public void Treu(ObjecteSql objSql)
+        public void Descarregar(ulong id)
+        {
+
+            Descarregar(new ulong[] { id });
+        }
+        public void Descarregar(IList<ulong> ids)
+        {
+            if (ids == null)
+                throw new ArgumentNullException();
+            semaforActualitzacions.WaitOne();
+            for(int i=0;i<ids.Count;i++)
+            {
+                if(controlObj.ContainsKey(ids[i]))
+                {
+                    this.idsObjs.Remove(ids[i]);
+                    try
+                    {
+                        controlObj[ids[i]].OnActualitzat();
+                    }
+                    catch { }
+                    try
+                    {
+                        controlObj[ids[i]].Baixa -= Treu;
+
+                    }catch { }
+
+                    controlObj.Remove(ids[i]);
+                }
+            }
+            semaforActualitzacions.Release();
+
+        }
+
+        public void Descarregar(ObjecteSql id)
+        {
+
+            Descarregar(new ObjecteSql[] { id });
+        }
+        public void Descarregar(IList<ObjecteSql> ids)
+        {
+            if (ids == null)
+                throw new ArgumentNullException();
+            semaforActualitzacions.WaitOne();
+            for (int i = 0; i < ids.Count; i++)
+            {
+                if (ids[i] != null)
+                {
+                    if (controlObj.ContainsKey(ids[i].IdIntern))
+                    {
+                        this.idsObjs.Remove(ids[i].IdIntern);
+
+                        try
+                        {
+                            controlObj[ids[i].IdIntern].Baixa -= Treu;
+
+                        }
+                        catch { }
+
+                        controlObj.Remove(ids[i].IdIntern);
+                    }
+                }
+            }
+            semaforActualitzacions.Release();
+
+        }
+        public void Treu(ObjecteSql objSql)
 		{
 			if (objSql != null)
 				Treu(objSql.IdIntern);
@@ -161,6 +229,7 @@ namespace Gabriel.Cat
 					controlObj[idInternObjSql].Actualitzat -= ComprovaActualitzacions;
 					controlObj[idInternObjSql].Alta += new ObjecteSqlEventHandler(Afegir);
 					controlObj.Remove(idInternObjSql);
+                    idsObjs.Remove(idInternObjSql);
 				} catch {
 				}
 
@@ -170,8 +239,8 @@ namespace Gabriel.Cat
 		private void ComprovaActualitzacionsEvent(object sender, System.Timers.ElapsedEventArgs e)
 		{
 			semaforActualitzacions.WaitOne();
-			foreach (KeyValuePair<ulong,ObjecteSql> obj in controlObj) {
-				ComprovaActualitzacions(obj.Value);
+			for(int i=0;i<idsObjs.Count;i++) {
+				ComprovaActualitzacions(controlObj[idsObjs[i]]);
 			}
 			semaforActualitzacions.Release();
 
@@ -217,19 +286,27 @@ namespace Gabriel.Cat
 			return correcto;
 		}
 		public void MigrarBD(BaseDeDades bdDestino, bool borrarDatosBdActual = false, bool resetBDTablasAfactadasDestino = true)
-		{//por testear...
-			if(!resetBDTablasAfactadasDestino&&!EstructuraTablasIdentica(bdDestino))
-				throw new SQLException("La base de datos del destino no tiene la misma estructura en las tablas");
-			ObjecteSql[] objs = this.controlObj.ValuesToArray();
-			if (borrarDatosBdActual)
-				Drops();
-			this.baseDeDades = bdDestino;
-			if (resetBDTablasAfactadasDestino)
-				Drops();
-			Creates();//crea las que no existan
-			Afegir(objs);//añade
-		}
-		protected abstract void Restaurar();
+        {//por testear...
+            if (!resetBDTablasAfactadasDestino && !EstructuraTablasIdentica(bdDestino))
+                throw new SQLException("La base de datos del destino no tiene la misma estructura en las tablas");
+            ObjecteSql[] objs = this.controlObj.ValuesToArray();
+            if (borrarDatosBdActual)
+                Drops();
+            this.baseDeDades = bdDestino;
+            if (resetBDTablasAfactadasDestino)
+                Drops();
+            DescargarTodo();
+            Creates();//crea las que no existan
+            Afegir(objs);//añade
+        }
+
+        public void DescargarTodo()
+        {
+            controlObj.Clear();
+            idsObjs.Clear();
+        }
+
+        protected abstract void Restaurar();
 		private static BaseDeDades DonamBD(TipusBaseDeDades tipusBD)
 		{
 			BaseDeDades bd = null;
@@ -244,11 +321,27 @@ namespace Gabriel.Cat
 
 		public IEnumerator<ObjecteSql> GetEnumerator()
 		{
-			semaforActualitzacions.WaitOne();
-			foreach (KeyValuePair<ulong,ObjecteSql> obj in controlObj)
-				yield return obj.Value;
-			semaforActualitzacions.Release();
+            IEnumerator<ObjecteSql> enumerator=null;
+            try
+            {
+                semaforActualitzacions.WaitOne();
+                enumerator = IGetEnumerator();
+               
+            }
+            catch { throw; }
+            finally
+            {
+                semaforActualitzacions.Release();
+            }
+            return enumerator;
 		}
+        private IEnumerator<ObjecteSql> IGetEnumerator()
+        {
+            for (int i = 0; i < idsObjs.Count; i++)
+            {
+                yield return controlObj[idsObjs[i]];
+            }
+        }
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
 		{
@@ -281,8 +374,11 @@ namespace Gabriel.Cat
 		public override string ToString()
 		{
 			Gabriel.Cat.text toString = "Objectes Controlats:\n";
-			foreach (ObjecteSql obj in this)
-				toString += "\n" + obj;
+            for (int i = 0; i < idsObjs.Count; i++)
+            {
+                toString += "\n" + controlObj[idsObjs[i]];
+            }
+        
 			return toString;
 		}
 
