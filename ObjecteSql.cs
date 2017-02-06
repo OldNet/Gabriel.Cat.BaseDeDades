@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Gabriel.Cat.Seguretat;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,21 +16,25 @@ namespace Gabriel.Cat
 		MySql,
 	//	Oracle
 	}
+    public enum CampXifratTipus
+    {
+        Text,Int,Long,Double
+    }
 	public abstract class ObjecteSql : IComparable<ObjecteSql>
 	{
 		private struct DadesSql
 		{
-			private bool necesitaCanvi;
+			private bool esDateTimeCamp;
 			private string dades;
 			public DadesSql(string dades, bool necessitaCanvi)
 			{
 				this.dades = dades;
-				this.necesitaCanvi = necessitaCanvi;
+				this.esDateTimeCamp = necessitaCanvi;
 			}
 
-			public bool NecesitaCanvi {
+			public bool EsDataTimeCamp {
 				get {
-					return necesitaCanvi;
+					return esDateTimeCamp;
 				}
 			}
 
@@ -43,7 +48,8 @@ namespace Gabriel.Cat
 		public event ObjecteSqlEventHandler Alta;
 		public event ObjecteSqlEventHandler Baixa;
 		public event PrimaryKeyControlEventHandler PrimaryKeyChanged;
-		private SortedList<string, DadesSql?> canvisObj;
+		private LlistaOrdenada<string, DadesSql?> canvisObj;
+        private LlistaOrdenada<string, string> campsXifrats;
 		string primaryKey;
 		string primaryKeyAnt;
 		string taula;
@@ -56,7 +62,8 @@ namespace Gabriel.Cat
 		public ObjecteSql()
 		{
 
-			canvisObj = new SortedList<string, DadesSql?>();
+			canvisObj = new LlistaOrdenada<string, DadesSql?>();
+            campsXifrats = new LlistaOrdenada<string, string>();
 			campPrimaryKey = "Id";
 			taula = "";
 			primaryKey = "";
@@ -137,7 +144,37 @@ namespace Gabriel.Cat
 				}
 			}
 		}
-		#endregion
+        protected string PrimaryKeyAnt
+        {
+            get { return primaryKeyAnt; }
+        }
+        #endregion
+        #region Alta Proteccio
+        protected void AltaProteccio(Type enumCampType)
+        {
+            Enum[] enumCampsAProtegir = Enum.GetValues(enumCampType).Cast<Enum>().ToArray();
+            for (int i = 0; i < enumCampsAProtegir.Length; i++)
+                AltaProteccio(enumCampsAProtegir[i]);
+        }
+        protected void AltaProteccio(Enum enumCamp)
+        {
+            AltaProteccio(enumCamp.ToString());
+        }
+        protected void AltaProteccio(string nomCamp)
+        {
+            if (!campsXifrats.ContainsKey(nomCamp))
+                campsXifrats.Add(nomCamp, nomCamp);
+        }
+        protected void BaixaProteccio(Enum enumCamp)
+        {
+            BaixaProteccio(enumCamp.ToString());
+        }
+        protected void BaixaProteccio(string nomCamp)
+        {
+            if (!campsXifrats.ContainsKey(nomCamp))
+                campsXifrats.Add(nomCamp, nomCamp);
+        }
+        #endregion
         protected bool[] AltaCanvis(Type enumType)
         {
             Enum[] enumADonarDalta =Enum.GetValues(enumType).Cast<Enum>().ToArray();
@@ -209,17 +246,7 @@ namespace Gabriel.Cat
         {
             CanviData(enumCaluCanvi.ToString(), data);
         }
-        public static string DoubleToString(TipusBaseDeDades tipusBD, int precicion)
-        {
-            string doubleString = "";
-            switch(tipusBD)
-            {
-                case TipusBaseDeDades.Acces: doubleString = "doube";break;
-                case TipusBaseDeDades.MySql: doubleString = "float("+precicion+")"; break;
-              //  case TipusBaseDeDades.Oracle: 
-            }
-            return doubleString;
-        }
+
 
         /// <summary>
         /// Dona d'alta el canvi en format mysql
@@ -319,77 +346,184 @@ namespace Gabriel.Cat
             ObjecteSql other = obj as ObjecteSql;
             bool iguals = other != null;
             if (iguals)
-                iguals = other.PrimaryKey == PrimaryKey;
+                iguals = other.Taula == Taula && other.PrimaryKey == PrimaryKey;
             return iguals;
         }
         #region sentenciesSQL
-        public string StringInsertSql()
+        public string StringInsertSql(Key keyXifrat = null)
 		{
-			return StringInsertSql(tipusBD);
+			return StringInsertSql(tipusBD,keyXifrat);
 		}
-		public abstract string StringInsertSql(TipusBaseDeDades tipusBD);
-		public string StringUpdateSql()
+		public abstract string StringInsertSql(TipusBaseDeDades tipusBD,Key keyXifrat=null);
+		public string StringUpdateSql(Key keyXifrat = null)
 		{
-			return StringUpdateSql(tipusBD);
+			return StringUpdateSql(tipusBD,keyXifrat);
 		}
-		public string StringUpdateSql(TipusBaseDeDades tipusBD)
+        public  string StringUpDateCampsXifrats(Key oldKey, Key newKey)
+        {
+            if (newKey == null)
+                newKey = new Key();
+            if (oldKey == null)
+                oldKey = new Key();
+            return IStringUpDateCampsXifrats(oldKey,newKey);
+        }
+        /// <summary>
+        /// String que actualiza los campos cifrados
+        /// </summary>
+        /// <param name="oldKey">si cifran la primaryKey se necesita, nunca sera null</param>
+        /// <param name="newKey">para cifrar los campos,nunca sera null</param>
+        /// <returns></returns>
+        protected abstract string IStringUpDateCampsXifrats(Key oldKey, Key newKey);
+
+        public string StringUpdateSql(TipusBaseDeDades tipusBD,Key keyXifrat = null)
 		{
-			string sentencia = null;
+            if (campsXifrats.Count > 0 && keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+			StringBuilder strUpdate = new StringBuilder();
+            StringBuilder strAux = new StringBuilder();
             List<string> canvis;
 
             if (ComprovacioSiEsPot()) {
 				canvis = new List<string>();
 				foreach (KeyValuePair<string, DadesSql?> campValor in canvisObj)
 					if (campValor.Value != null) {
-					if (campValor.Key != "Id") {
-						if (!campValor.Value.Value.NecesitaCanvi)
-							canvis.Add(campValor.Key + "=" + campValor.Value);
-						else {
-							canvis.Add(campValor.Key + "=" + DateTimeToStringSQL(tipusBD, campValor.Value.Value.Dades));
-							
-						}
-					} else
-						canvis.Add(CampPrimaryKey + "=" + primaryKeyAnt);
+
+                        if (campValor.Key != "Id")
+                        {
+                            strAux.Append(campValor.Key);
+                            strAux.Append("=");
+                            if (!campValor.Value.Value.EsDataTimeCamp)
+                            {
+                                if (campsXifrats.ContainsKey(campValor.Key))
+                                {
+                                    strAux.Append(keyXifrat.Encrypt(campValor.Value.Value.Dades));
+                                }
+                                else
+                                    strAux.Append(campValor.Value);
+                            }
+                            else
+                            {
+
+                                if (campsXifrats.ContainsKey(campValor.Key))
+                                {
+                                    strAux.Append(keyXifrat.Encrypt(DateTimeToStringSQL(tipusBD, campValor.Value.Value.Dades)));
+                                }
+                                else
+                                    strAux.Append(DateTimeToStringSQL(tipusBD, campValor.Value.Value.Dades));
+
+                            }
+                        }
+                        else
+                        {
+                            strAux.Append(CampPrimaryKey);
+                            strAux.Append("=");
+                            if (campsXifrats.ContainsKey(CampPrimaryKey))
+                            {
+                                strAux.Append(keyXifrat.Encrypt(primaryKeyAnt));
+                            }else
+                            strAux.Append(primaryKeyAnt);
+                        }
+
+                        canvis.Add(strAux.ToString());
+                        strAux.Clear();
 				}
 				if (canvis.Count > 0) {
-					sentencia = "update " + taula + " set ";
-					for (int i = 0; i < canvis.Count - 1; i++)
-						sentencia += canvis[i] + ",";
-					sentencia += canvis[canvis.Count - 1];
-					sentencia += " where " + CampPrimaryKey + "='" + primaryKeyAnt + "'";
+                    strUpdate.Append("update ");
+                    strUpdate.Append(taula);
+                    strUpdate.Append(" set ");
+                    for (int i = 0,f= canvis.Count - 1; i < f; i++)
+                    {
+                        strUpdate.Append(canvis[i]);
+                        strUpdate.Append(",");
+                    }
+                    strUpdate.Append(canvis[canvis.Count - 1]);
+                    strUpdate.Append(" where ");
+                    strUpdate.Append(CampPrimaryKey);
+                    strUpdate.Append("='");
+                    if (!campsXifrats.ContainsKey(CampPrimaryKey))
+                    {
+                        strUpdate.Append(primaryKeyAnt);
+                    }else
+                    {
+                        strUpdate.Append(keyXifrat.Encrypt(primaryKeyAnt));
+                    }
+                    strUpdate.Append("'");
 				}
 			}
-			return sentencia;
+            return strUpdate.ToString();
 		}
-		public string StringConsultaSql()
+		public string StringConsultaSql(Key xifratCamps=null)
 		{
-			string consulta = null;
-			if (ComprovacioSiEsPot())
-				consulta = "select " + CampPrimaryKey + " from " + Taula + " where " + CampPrimaryKey + "='" + primaryKey + "';";
-			return consulta;
+            if (campsXifrats.ContainsKey(CampPrimaryKey) && xifratCamps == null)
+                throw new ArgumentNullException("xifratCamps");
+            StringBuilder strConsulta = new StringBuilder();
+            if (ComprovacioSiEsPot())
+            {
+                strConsulta.Append("select * from ");
+                strConsulta.Append(Taula);
+                strConsulta.Append(" where ");
+                strConsulta.Append(CampPrimaryKey);
+                strConsulta.Append("='");
+                if (campsXifrats.ContainsKey(CampPrimaryKey))
+                {
+                    strConsulta.Append(xifratCamps.Encrypt(primaryKey));
+                } else {
+
+                    strConsulta.Append(primaryKey);
+                } 
+               strConsulta.Append("';");
+            }
+			return strConsulta.ToString();
 		}
 		protected virtual bool ComprovacioSiEsPot()
 		{
 			return taula != "" && primaryKey != "" && CampPrimaryKey != "" && primaryKeyAnt != "";
 		}
-		public string StringDeleteSql()
+		public string StringDeleteSql(Key xifratCamps=null)
 		{
-			string sentencia = null;
+            if (campsXifrats.ContainsKey(CampPrimaryKey) && xifratCamps == null)
+                throw new ArgumentNullException("xifratCamps");
+            StringBuilder  strDelete=new StringBuilder();
 			if (ComprovacioSiEsPot()) {
-				sentencia = "delete from " + taula + " where " + CampPrimaryKey + "='" + primaryKey + "'";
+                strDelete.Append("delete from ");
+                strDelete.Append(taula);
+                strDelete.Append(" where ");
+                strDelete.Append(CampPrimaryKey);
+                strDelete.Append("='");
+                if (campsXifrats.ContainsKey(CampPrimaryKey))
+                {
+                    strDelete.Append(xifratCamps.Encrypt(primaryKey));
+                }
+                else
+                {
+
+                    strDelete.Append(primaryKey);
+                }
+                strDelete.Append("'");
 			}
-			return sentencia;
+			return strDelete.ToString();
 		}
 
-		#endregion
-		/// <summary>
-		/// Convertiex si pot l'string en TimeSpan,
-		/// Pot llençar excepcions si els numeros no son convertibles a int32
-		/// </summary>
-		/// <param name="timeSpan">string amb format d;h;m;s;mili</param>
-		/// <exception cref="Exception">Excepció produïda al convertir a Int32 una part del timeSpan</exception>
-		/// <returns>si no esta bé l'string retorna un new TimeSpan()</returns>
-		public static TimeSpan StringToTimeSpan(string timeSpan)
+        #endregion
+        public static string DoubleToString(TipusBaseDeDades tipusBD, int precicion)
+        {
+            string doubleString = "";
+            switch (tipusBD)
+            {
+                case TipusBaseDeDades.Acces: doubleString = "doube"; break;
+                case TipusBaseDeDades.MySql: doubleString = "float(" + precicion + ")"; break;
+                    //  case TipusBaseDeDades.Oracle: 
+            }
+            return doubleString;
+        }
+        /// <summary>
+        /// Convertiex si pot l'string en TimeSpan,
+        /// Pot llençar excepcions si els numeros no son convertibles a int32
+        /// </summary>
+        /// <param name="timeSpan">string amb format d;h;m;s;mili</param>
+        /// <exception cref="Exception">Excepció produïda al convertir a Int32 una part del timeSpan</exception>
+        /// <returns>si no esta bé l'string retorna un new TimeSpan()</returns>
+        public static TimeSpan StringToTimeSpan(string timeSpan)
 		{
 			TimeSpan timeSpanRespota = new TimeSpan();
 			string[] camps;
@@ -412,8 +546,23 @@ namespace Gabriel.Cat
 		}
 		public static string DateTimeToString(DateTime data)
 		{
-			return data.ToShortDateString();
-		}
+            StringBuilder strData = new StringBuilder();
+            strData.Append(data.Year);
+            strData.Append(";");
+            strData.Append(data.Month);
+            strData.Append(";");
+            strData.Append(data.Day);
+            strData.Append(";");
+            strData.Append(data.Hour);
+            strData.Append(";");
+            strData.Append(data.Minute);
+            strData.Append(";");
+            strData.Append(data.Second);
+            strData.Append(";");
+            strData.Append(data.Millisecond);
+
+            return strData.ToString();
+        }
 		/// <summary>
 		/// Dona una string de MySql
 		/// </summary>
@@ -514,7 +663,7 @@ namespace Gabriel.Cat
 		/// <summary>
 		/// 
 		/// </summary>
-		/// <param name="data">el format serà any;mes;dia</param>
+		/// <param name="data">el format serà any;mes;dia;hora;minuts;segons;milisegons</param>
 		/// <exception cref="Exception">Excepció produïda al convertir a Int32 una part de la data</exception>
 		/// <returns>retorna un new DateTime() si no es pot realitzar la operació</returns>
 		protected static DateTime StringToDateTime(string data)
@@ -526,7 +675,7 @@ namespace Gabriel.Cat
 				camps = data.Split(';');
 				if (camps.Length == 3) {
 					try {
-						dateTimeConvertit = new DateTime(Convert.ToInt32(camps[0]), Convert.ToInt32(camps[1]), Convert.ToInt32(camps[2]));
+						dateTimeConvertit = new DateTime(Convert.ToInt32(camps[0]), Convert.ToInt32(camps[1]), Convert.ToInt32(camps[2]), Convert.ToInt32(camps[3]), Convert.ToInt32(camps[4]), Convert.ToInt32(camps[5]), Convert.ToInt32(camps[6]));
 					} catch {
 						throw new Exception("El format no es el correcte\n" + data);
 					}
@@ -535,7 +684,27 @@ namespace Gabriel.Cat
 			return dateTimeConvertit;
 			
 		}
-	}
+        /// <summary>
+        /// Convierte  la string devuelta por la base de datos con el campo tipo DateTime en DateTime
+        /// </summary>
+        /// <param name="dateTime"></param>
+        /// <param name="tipus"></param>
+        /// <returns></returns>
+        public static DateTime StringBdDateTimeToDateTime(string stringBdDateTime,TipusBaseDeDades tipus)
+        {
+            return DateTime.Now;//por hacer
+        }
+        /// <summary>
+        /// Convierte un DateTime en la string devuelta por la base de datos con el campo tipo DateTime
+        /// </summary>
+        /// <param name="dateTime"></param>
+        /// <param name="tipus"></param>
+        /// <returns></returns>
+        public static string DateTimeToStringBdDateTime(DateTime dateTime, TipusBaseDeDades tipus)
+        {
+            return String.Empty;//por hacer
+        }
+    }
 	public class InfoEventArgs : EventArgs
 	{
 		string primaryKeyAnterior;

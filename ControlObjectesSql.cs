@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Gabriel.Cat.Extension;
 
 using System.Threading;
+using Gabriel.Cat.Seguretat;
 
 namespace Gabriel.Cat
 {
@@ -26,6 +27,7 @@ namespace Gabriel.Cat
 	{
 
 		public event ObjecteNouEventHandler ObjNou;
+        private Key keyXifrat;
 		private LlistaOrdenada<ulong, ObjecteSql> controlObj;
         private Llista<ulong> idsObjs;
 		private BaseDeDades baseDeDades;
@@ -33,13 +35,13 @@ namespace Gabriel.Cat
 		Semaphore semaforActualitzacions;
 		string[] creates;
 		string[] tablas;
-		public ControlObjectesSql(BaseDeDades baseDeDades, StringCreate[] creates,bool restaurarTotesDades=true)
+		public ControlObjectesSql(BaseDeDades baseDeDades, StringCreate[] creates,Key keyXifrat=null,bool restaurarTotesDades=true)
 		{
             string[] createsSql;
             createsSql = new string[creates.Length];
             for (int i = 0; i < creates.Length; i++)
                 createsSql[i] = creates[i](baseDeDades.TipusBD);
-            
+            this.keyXifrat = keyXifrat;
             CreatesSql = createsSql;
 			this.baseDeDades = baseDeDades;
 			baseDeDades.Conecta();
@@ -52,15 +54,15 @@ namespace Gabriel.Cat
 			semaforActualitzacions = new Semaphore(1, 1);
 			Creates();
             if(restaurarTotesDades)
-               Restaurar();
+               RestaurarAllData();
 		}
 
-		public ControlObjectesSql(TipusBaseDeDades tipusBD, StringCreate[] creates, bool restaurarTotesDades = true)
-			: this(DonamBD(tipusBD), creates,restaurarTotesDades)
+		public ControlObjectesSql(TipusBaseDeDades tipusBD, StringCreate[] creates,Key keyXifrat=null, bool restaurarTotesDades = true)
+			: this(DonamBD(tipusBD), creates,keyXifrat,restaurarTotesDades)
 		{
 		}
-		public ControlObjectesSql(StringCreate[] creates, bool restaurarTotesDades = true)
-			: this(TipusBaseDeDades.MySql, creates,restaurarTotesDades)
+		public ControlObjectesSql(StringCreate[] creates,Key keyXifrat=null, bool restaurarTotesDades = true)
+			: this(TipusBaseDeDades.MySql, creates,keyXifrat,restaurarTotesDades)
 		{
 		}
 		protected BaseDeDades BaseDeDades {
@@ -68,6 +70,40 @@ namespace Gabriel.Cat
 				return baseDeDades;
 			}
 		}
+        /// <summary>
+        /// Si es null no està xifrada
+        /// </summary>
+        public Key KeyXifrat
+        {
+            get { return keyXifrat; }
+            set
+            {
+                
+                //mirar de optimizarlo
+                RestaurarAllData();
+                if (value == null)
+                    value = new Key();
+                
+                for (int i=0;i<idsObjs.Count;i++)
+                    {
+                        try
+                        {
+                            baseDeDades.ConsultaSQL(controlObj[idsObjs[i]].StringUpDateCampsXifrats(KeyXifrat,value));
+                        }
+                        catch { }
+                    }
+                KeyXifrat = value;
+
+            }
+        }
+        public ObjecteSql this[int index]
+        {
+            get { return controlObj[idsObjs[index]]; }
+        }
+        public int Count
+        {
+            get { return controlObj.Count; }
+        }
 		public double TempsComprovacioActualitzacions {
 			get { return temporitzadorActualitzacions.Interval; }
 			set { temporitzadorActualitzacions.Interval = value; }
@@ -113,7 +149,7 @@ namespace Gabriel.Cat
 			if (objSql != null)
 				if (!controlObj.ContainsKey(objSql.IdIntern)) {
 				try {
-					baseDeDades.ConsultaSQL(objSql.StringInsertSql(baseDeDades.TipusBD));//si peta no lo pone...
+					baseDeDades.ConsultaSQL(objSql.StringInsertSql(baseDeDades.TipusBD,KeyXifrat));//si peta no lo pone...
 					if (objSql is ObjecteSqlIdAuto) {
 						objSql.PrimaryKey = baseDeDades.ConsultaUltimID();
 						objSql.DessaCanvis();
@@ -224,7 +260,7 @@ namespace Gabriel.Cat
 		{
 			if (controlObj.ContainsKey(idInternObjSql)) {
 				try {
-					baseDeDades.ConsultaSQL(controlObj[idInternObjSql].StringDeleteSql());//elimina de la base de dades,si peta no el treu...
+					baseDeDades.ConsultaSQL(controlObj[idInternObjSql].StringDeleteSql(KeyXifrat));//elimina de la base de dades,si peta no el treu...
 					controlObj[idInternObjSql].Baixa -= new ObjecteSqlEventHandler(Treu);
 					controlObj[idInternObjSql].Actualitzat -= ComprovaActualitzacions;
 					controlObj[idInternObjSql].Alta += new ObjecteSqlEventHandler(Afegir);
@@ -306,8 +342,29 @@ namespace Gabriel.Cat
             idsObjs.Clear();
         }
 
-        protected abstract void Restaurar();
-		private static BaseDeDades DonamBD(TipusBaseDeDades tipusBD)
+        protected abstract void RestaurarAllData();
+        protected void DecryptTable(LlistaOrdenada<int, CampXifratTipus> campsXifrats, string[,] tabla)
+        {
+            CampXifratTipus tipusCamp;
+          for(int x=0,xF=tabla.GetLength(DimensionMatriz.X),yF=tabla.GetLength(DimensionMatriz.Y);x<xF;x++)
+            {
+                if(campsXifrats.ContainsKey(x))
+                {
+                    tipusCamp = campsXifrats[x];
+                    for(int y=0;y<yF;y++)
+                    {
+                        switch(tipusCamp)
+                        {
+                            case CampXifratTipus.Double:tabla[x, y] = Serializar.ToDouble(KeyXifrat.Decrypt(Serializar.GetBytes(double.Parse(tabla[x, y])))) + "";break;
+                            case CampXifratTipus.Int: tabla[x, y] = Serializar.ToInt(KeyXifrat.Decrypt(Serializar.GetBytes(int.Parse(tabla[x, y])))) + ""; break;
+                            case CampXifratTipus.Long: tabla[x, y] = Serializar.ToLong(KeyXifrat.Decrypt(Serializar.GetBytes(long.Parse(tabla[x, y])))) + ""; break;
+                            case CampXifratTipus.Text:tabla[x, y] = KeyXifrat.Decrypt(tabla[x, y]);break;
+                        }
+                    }
+                }
+            }
+        }
+        private static BaseDeDades DonamBD(TipusBaseDeDades tipusBD)
 		{
 			BaseDeDades bd = null;
 			switch (tipusBD) {
@@ -387,8 +444,8 @@ namespace Gabriel.Cat
 
 			string upDate = null;
 
-			upDate = obj.StringUpdateSql(baseDeDades.TipusBD);
-			if (upDate != null) {
+			upDate = obj.StringUpdateSql(baseDeDades.TipusBD, KeyXifrat);
+			if (!String.IsNullOrEmpty(upDate)) {
 				try {
 					obj.Actualitzat -= ComprovaActualitzacions;
 					baseDeDades.ConsultaSQL(upDate);

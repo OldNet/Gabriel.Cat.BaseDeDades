@@ -90,5 +90,11 @@
       <DependentUpon>VisualitzaTaula.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Gabriel.Cat.Seguretat\Gabriel.Cat.Seguretat.csproj">
+      <Project>{AA9B98E7-21C8-4E80-89BF-83BA97DEF42C}</Project>
+      <Name>Gabriel.Cat.Seguretat</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
