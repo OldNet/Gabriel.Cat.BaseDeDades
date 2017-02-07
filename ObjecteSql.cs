@@ -443,7 +443,7 @@ namespace Gabriel.Cat
                                 case CampXifratTipus.Data:
                                     if (campsXifrats.ContainsKey(campValor.Key))
                                     {
-                                        strAux.Append(DateTimeToStringSQL(tipusBD, new DateTime(Serializar.ToLong(keyXifrat.Encrypt(Serializar.GetBytes((long)campValor.Value.Value.Dades))))));
+                                        strAux.Append(DateTimeToStringSQL(tipusBD, EncryptDateTime((long)campValor.Value.Value.Dades,keyXifrat)));
                                     }
                                     else
                                         strAux.Append(DateTimeToStringSQL(tipusBD, new DateTime((long)campValor.Value.Value.Dades)));
@@ -451,27 +451,27 @@ namespace Gabriel.Cat
                                 case CampXifratTipus.Double:
                                     if (campsXifrats.ContainsKey(campValor.Key))
                                     {
-                                        strAux.Append(Serializar.ToDouble(keyXifrat.Encrypt(Serializar.GetBytes((double)campValor.Value.Value.Dades))));
+                                        strAux.Append(EncryptNumero((double)campValor.Value.Value.Dades,keyXifrat));
                                     }
                                     else
-                                        strAux.Append((string)campValor.Value.Value.Dades);
+                                        strAux.Append(campValor.Value.Value.Dades+"");
                                     break;
 
                                 case CampXifratTipus.Int:
                                     if (campsXifrats.ContainsKey(campValor.Key))
                                     {
-                                        strAux.Append(Serializar.ToInt(keyXifrat.Encrypt(Serializar.GetBytes((int)campValor.Value.Value.Dades))));
+                                        strAux.Append(EncryptNumero((int)campValor.Value.Value.Dades, keyXifrat));
                                     }
                                     else
-                                        strAux.Append((string)campValor.Value.Value.Dades);
+                                        strAux.Append(campValor.Value.Value.Dades + "");
                                     break;
                                 case CampXifratTipus.Long:
                                     if (campsXifrats.ContainsKey(campValor.Key))
                                     {
-                                        strAux.Append(Serializar.ToLong(keyXifrat.Encrypt(Serializar.GetBytes((long)campValor.Value.Value.Dades))));
+                                        strAux.Append(EncryptNumero((long)campValor.Value.Value.Dades, keyXifrat));
                                     }
                                     else
-                                        strAux.Append((string)campValor.Value.Value.Dades);
+                                        strAux.Append(campValor.Value.Value.Dades + "");
                                     break;
                                 case CampXifratTipus.Text:
                                     if (campValor.Value.Value.Dades != null)
@@ -533,6 +533,29 @@ namespace Gabriel.Cat
             }
             return strUpdate.ToString();
         }
+
+        public long EncryptNumero(long numero, Key keyXifrat)
+        {
+            return Serializar.ToLong(keyXifrat.Encrypt(Serializar.GetBytes(numero)));
+        }
+        public int EncryptNumero(int numero, Key keyXifrat)
+        {
+            return Serializar.ToInt(keyXifrat.Encrypt(Serializar.GetBytes(numero)));
+        }
+        public double EncryptNumero(double numero, Key keyXifrat)
+        {
+            return Serializar.ToDouble(keyXifrat.Encrypt(Serializar.GetBytes(numero)));
+        }
+
+        public DateTime EncryptDateTime(DateTime dateTime, Key keyXifrat)
+        {
+            return EncryptDateTime(dateTime.Ticks,keyXifrat);
+        }
+        public DateTime EncryptDateTime(long tiks, Key keyXifrat)
+        {
+            return new DateTime(Serializar.ToLong(keyXifrat.Encrypt(Serializar.GetBytes(tiks))));
+        }
+
         public string StringConsultaSql(Key xifratCamps = null)
         {
             if (campsXifrats.ContainsKey(CampPrimaryKey) && xifratCamps == null)
@@ -600,58 +623,7 @@ namespace Gabriel.Cat
             }
             return doubleString;
         }
-        /// <summary>
-        /// Convertiex si pot l'string en TimeSpan,
-        /// Pot llençar excepcions si els numeros no son convertibles a int32
-        /// </summary>
-        /// <param name="timeSpan">string amb format d;h;m;s;mili</param>
-        /// <exception cref="Exception">Excepció produïda al convertir a Int32 una part del timeSpan</exception>
-        /// <returns>si no esta bé l'string retorna un new TimeSpan()</returns>
-        public static TimeSpan StringToTimeSpan(string timeSpan)
-        {
-            TimeSpan timeSpanRespota = new TimeSpan();
-            string[] camps;
-            if (timeSpan != null)
-                if (timeSpan.Contains(';'))
-                {
-                    camps = timeSpan.Split(';');
-                    if (camps.Length == 5)
-                    {
-                        try
-                        {
-                            timeSpanRespota = new TimeSpan(Convert.ToInt32(camps[0]), Convert.ToInt32(camps[1]), Convert.ToInt32(camps[2]), Convert.ToInt32(camps[3]), Convert.ToInt32(camps[4]));
-                        }
-                        catch
-                        {
-                            throw new Exception("L'String no te el format adequat!\n" + timeSpan);
-                        }
-                    }
-                }
-            return timeSpanRespota;
-        }
-        public static string TimeSpanToString(TimeSpan temps)
-        {
-            return "'" + temps.Days + ";" + temps.Hours + ";" + temps.Minutes + ";" + temps.Seconds + ";" + temps.Milliseconds + "'";
-        }
-        public static string DateTimeToString(DateTime data)
-        {
-            StringBuilder strData = new StringBuilder();
-            strData.Append(data.Year);
-            strData.Append(";");
-            strData.Append(data.Month);
-            strData.Append(";");
-            strData.Append(data.Day);
-            strData.Append(";");
-            strData.Append(data.Hour);
-            strData.Append(";");
-            strData.Append(data.Minute);
-            strData.Append(";");
-            strData.Append(data.Second);
-            strData.Append(";");
-            strData.Append(data.Millisecond);
 
-            return strData.ToString();
-        }
         /// <summary>
         /// Dona una string de MySql
         /// </summary>
