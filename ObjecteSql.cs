@@ -375,7 +375,7 @@ namespace Gabriel.Cat
             if (Actualitzat != null)
                 Actualitzat(this);
             List<string> claus = new List<string>();
-            foreach (KeyValuePair<string, DadesSql?> keyValue in canvisObj)
+            foreach (KeyValuePair<string, DadesSql?> keyValue in canvisObj)//s'ha d'optimitzar
                 claus.Add(keyValue.Key);
             for (int i = 0; i < claus.Count; i++)
                 canvisObj[claus[i]] = null;
@@ -534,27 +534,7 @@ namespace Gabriel.Cat
             return strUpdate.ToString();
         }
 
-        public long EncryptNumero(long numero, Key keyXifrat)
-        {
-            return Serializar.ToLong(keyXifrat.Encrypt(Serializar.GetBytes(numero)));
-        }
-        public int EncryptNumero(int numero, Key keyXifrat)
-        {
-            return Serializar.ToInt(keyXifrat.Encrypt(Serializar.GetBytes(numero)));
-        }
-        public double EncryptNumero(double numero, Key keyXifrat)
-        {
-            return Serializar.ToDouble(keyXifrat.Encrypt(Serializar.GetBytes(numero)));
-        }
 
-        public DateTime EncryptDateTime(DateTime dateTime, Key keyXifrat)
-        {
-            return EncryptDateTime(dateTime.Ticks,keyXifrat);
-        }
-        public DateTime EncryptDateTime(long tiks, Key keyXifrat)
-        {
-            return new DateTime(Serializar.ToLong(keyXifrat.Encrypt(Serializar.GetBytes(tiks))));
-        }
 
         public string StringConsultaSql(Key xifratCamps = null)
         {
@@ -612,6 +592,67 @@ namespace Gabriel.Cat
         }
 
         #endregion
+        #region Encrypt/Decrypt
+        public long EncryptNumero(long numero, Key keyXifrat)
+        {
+            if (keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+            return Serializar.ToLong(keyXifrat.Encrypt(Serializar.GetBytes(numero)));
+        }
+        public int EncryptNumero(int numero, Key keyXifrat)
+        {
+            if (keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+            return Serializar.ToInt(keyXifrat.Encrypt(Serializar.GetBytes(numero)));
+        }
+        public double EncryptNumero(double numero, Key keyXifrat)
+        {
+            if (keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+            return Serializar.ToDouble(keyXifrat.Encrypt(Serializar.GetBytes(numero)));
+        }
+
+        public DateTime EncryptDateTime(DateTime dateTime, Key keyXifrat)
+        {
+            if (keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+            return EncryptDateTime(dateTime.Ticks, keyXifrat);
+        }
+        public DateTime EncryptDateTime(long tiks, Key keyXifrat)
+        {
+            if (keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+            return new DateTime(Serializar.ToLong(keyXifrat.Encrypt(Serializar.GetBytes(tiks))));
+        }
+
+        public static DateTime DecryptDateTime(DateTime dateTime, Key keyXifrat)
+        { return DecryptDateTime(dateTime.Ticks, keyXifrat); }
+        public static DateTime DecryptDateTime(long tiks, Key keyXifrat)
+        {
+            if (keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+            return new DateTime(Serializar.ToLong(keyXifrat.Decrypt(Serializar.GetBytes(tiks))));
+        }
+        public static long DecryptNumber(long number, Key keyXifrat)
+        {
+            if (keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+            return Serializar.ToLong(keyXifrat.Decrypt(Serializar.GetBytes(number)));
+        }
+        public static int DecryptNumber(int number, Key keyXifrat)
+        {
+            if (keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+            return Serializar.ToInt(keyXifrat.Decrypt(Serializar.GetBytes(number)));
+        }
+        public static double DecryptNumber(double number, Key keyXifrat)
+        {
+            if (keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+            return Serializar.ToDouble(keyXifrat.Decrypt(Serializar.GetBytes(number)));
+        }
+        #endregion
+        #region Format SQL
         public static string DoubleToString(TipusBaseDeDades tipusBD, int precicion)
         {
             string doubleString = "";
@@ -721,36 +762,9 @@ namespace Gabriel.Cat
             }
             return strAutoIncrement;
         }
+        #endregion
+        #region OUTput bd sql
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="data">el format serà any;mes;dia;hora;minuts;segons;milisegons</param>
-        /// <exception cref="Exception">Excepció produïda al convertir a Int32 una part de la data</exception>
-        /// <returns>retorna un new DateTime() si no es pot realitzar la operació</returns>
-        protected static DateTime StringToDateTime(string data)
-        {
-            DateTime dateTimeConvertit = new DateTime();
-            string[] camps;
-            if (data != null)
-                if (data.Contains(';'))
-                {
-                    camps = data.Split(';');
-                    if (camps.Length == 3)
-                    {
-                        try
-                        {
-                            dateTimeConvertit = new DateTime(Convert.ToInt32(camps[0]), Convert.ToInt32(camps[1]), Convert.ToInt32(camps[2]), Convert.ToInt32(camps[3]), Convert.ToInt32(camps[4]), Convert.ToInt32(camps[5]), Convert.ToInt32(camps[6]));
-                        }
-                        catch
-                        {
-                            throw new Exception("El format no es el correcte\n" + data);
-                        }
-                    }
-                }
-            return dateTimeConvertit;
-
-        }
         /// <summary>
         /// Convierte  la string devuelta por la base de datos con el campo tipo DateTime en DateTime
         /// </summary>
@@ -771,6 +785,7 @@ namespace Gabriel.Cat
         {
             return String.Empty;//por hacer
         }
+        #endregion
     }
     public class InfoEventArgs : EventArgs
     {
