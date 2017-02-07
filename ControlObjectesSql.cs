@@ -369,6 +369,11 @@ namespace Gabriel.Cat
         }
 
         protected abstract void RestaurarAllData();
+        /// <summary>
+        /// Desxifra la taula provinent de la BD
+        /// </summary>
+        /// <param name="campsXifrats"> diccionari de posicióTaula/TipusCamp </param>
+        /// <param name="tabla"></param>
         protected void DecryptTable(LlistaOrdenada<int, CampXifratTipus> campsXifrats, string[,] tabla)
         {
             CampXifratTipus tipusCamp;

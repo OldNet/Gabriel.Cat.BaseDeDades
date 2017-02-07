@@ -653,7 +653,7 @@ namespace Gabriel.Cat
         }
         #endregion
         #region Format SQL
-        public static string DoubleToString(TipusBaseDeDades tipusBD, int precicion)
+        public static string DoubleToString(TipusBaseDeDades tipusBD, int precicion=53)
         {
             string doubleString = "";
             switch (tipusBD)
