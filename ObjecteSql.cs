@@ -653,13 +653,17 @@ namespace Gabriel.Cat
         }
         #endregion
         #region Format SQL
-        public static string DoubleToString(TipusBaseDeDades tipusBD, int precicion=53)
+        public static string DoubleToString(TipusBaseDeDades tipusBD, int parteEntera=38,int parteDecimal=15)
         {
+            const int MAX= 53;
+            if (parteEntera<0||parteDecimal<0||parteEntera + parteDecimal > MAX)
+                throw new ArgumentOutOfRangeException();
+
             string doubleString = "";
             switch (tipusBD)
             {
-                case TipusBaseDeDades.Acces: doubleString = "doube"; break;
-                case TipusBaseDeDades.MySql: doubleString = "float(" + precicion + ")"; break;
+                case TipusBaseDeDades.Acces: doubleString = " doube "; break;
+                case TipusBaseDeDades.MySql: doubleString = " float(" + (parteEntera+parteDecimal)+","+parteDecimal + ") "; break;
                     //  case TipusBaseDeDades.Oracle: 
             }
             return doubleString;

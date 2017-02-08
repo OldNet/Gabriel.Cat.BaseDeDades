@@ -15,14 +15,20 @@ namespace Gabriel.Cat
 	/// </summary>
 	public abstract class ObjecteSqlIdAuto:ObjecteSql,IClauUnicaPerObjecte
 	{
-		protected ObjecteSqlIdAuto(string taula,string primaryKey,string campPrimaryKey ): base(taula, primaryKey,campPrimaryKey)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="taula"></param>
+        /// <param name="campPrimaryKey"></param>
+        /// <param name="primaryKey">si no ha sido insertada tendrá el valor por defecto asta que se le asigne en el insert</param>
+		protected ObjecteSqlIdAuto(string taula, string campPrimaryKey, string primaryKey="") : base(taula, primaryKey,campPrimaryKey)
 		{}
 
         public IComparable Clau
         {
             get
             {
-                return PrimaryKey;
+                return IdIntern;
             }
         }
     }
