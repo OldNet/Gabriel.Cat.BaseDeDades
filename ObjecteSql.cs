@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Gabriel.Cat.Extension;
 namespace Gabriel.Cat
-{
+{//de moment double i dateTime no els carrega bé de la BD mysql (access no s'ha probat) es pot utilitzar long en els dos casos en double s'hagafen el bytes i es converteix a long i datetime s'utlitzan els ticks
 	public delegate void ObjecteSqlEventHandler(ObjecteSql sqlObj);
 	public delegate void PrimaryKeyControlEventHandler(ObjecteSql obj, InfoEventArgs informacioEvent);
 	public enum TipusBaseDeDades
@@ -55,9 +55,16 @@ namespace Gabriel.Cat
 					return dades;
 				}
 			}
-		}
+            public override string ToString()
+            {
+                return dades.ToString()??"null";
+            }
+        }
 		public event ObjecteSqlEventHandler Actualitzat;
-		public event ObjecteSqlEventHandler Alta;
+
+        
+
+        public event ObjecteSqlEventHandler Alta;
 		public event ObjecteSqlEventHandler Baixa;
 		public event PrimaryKeyControlEventHandler PrimaryKeyChanged;
 		private LlistaOrdenada<string, DadesSql?> canvisObj;
@@ -263,7 +270,7 @@ namespace Gabriel.Cat
 
         public static int CalculaLongitudStringEncriptada(int length)
         {
-            return length *2;
+            return length *4;
         }
 
         /// <summary>
@@ -393,8 +400,14 @@ namespace Gabriel.Cat
 				iguals = other.Taula == Taula && other.PrimaryKey == PrimaryKey;
 			return iguals;
 		}
-		#region sentenciesSQL
-		public string StringInsertSql(Key keyXifrat = null)
+        #region Conversions
+        public static long DoubleToLong(double valor)
+        {
+            return Serializar.ToLong(Serializar.GetBytes(valor));
+        }
+        #endregion
+        #region sentenciesSQL
+        public string StringInsertSql(Key keyXifrat = null)
 		{
 			return StringInsertSql(tipusBD, keyXifrat);
 		}
@@ -462,7 +475,7 @@ namespace Gabriel.Cat
 								if (campValor.Value.Value.Dades != null) {
 									strAux.Append("'");
 									if (campsXifrats.ContainsKey(campValor.Key)) {
-										strAux.Append(keyXifrat.Encrypt((string)campValor.Value.Value.Dades));
+										strAux.Append(EncryptString((string)campValor.Value.Value.Dades,keyXifrat));
 									} else
 										strAux.Append((string)campValor.Value.Value.Dades);
 									strAux.Append("'");
@@ -564,7 +577,7 @@ namespace Gabriel.Cat
                 throw new ArgumentNullException("keyXifrat");
             if (str == null)
                 str = "";
-            return keyXifrat.Encrypt(str).OneCharToTwoChars();
+            return keyXifrat.Encrypt(str).OneCharToFourChars();
         }
 
         public static long EncryptNumero(long numero, Key keyXifrat)
@@ -603,14 +616,14 @@ namespace Gabriel.Cat
 				throw new ArgumentNullException("keyXifrat");
 			return Serializar.ToDouble(keyXifrat.Decrypt(Serializar.GetBytes(number)));
 		}
-        public static string DecryptString(string strBase64EncodeAndEcnrypted, Key keyXifrat)
+        public static string DecryptString(string strFourCharsOneCharAndEcnrypted, Key keyXifrat)
         {
             if (keyXifrat == null)
                 throw new ArgumentNullException("keyXifrat");
-            if (strBase64EncodeAndEcnrypted == null)
-                strBase64EncodeAndEcnrypted = "";
+            if (strFourCharsOneCharAndEcnrypted == null)
+                strFourCharsOneCharAndEcnrypted = "";
 
-            return keyXifrat.Decrypt(strBase64EncodeAndEcnrypted.TwoCharsToOneChar());
+            return keyXifrat.Decrypt(strFourCharsOneCharAndEcnrypted.FourCharsOneChar());
         }
         public static string ParseDoubleNetToBd(double num)
         {

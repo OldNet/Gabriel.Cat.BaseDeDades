@@ -145,7 +145,7 @@ namespace Gabriel.Cat
                                     filaActual[i] = currentObj.ToString();
                                 else filaActual[i] = ((DateTime)currentObj).ToLongTimeString();
                         }catch(Exception e){
-                        	
+                        	//al parecer origina una excepcion cuando quiere obtener una fecha...y es del conector en el GetValue
                         }
                       
                         comlumsAndRows.Add(filaActual);

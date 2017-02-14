@@ -152,7 +152,13 @@ namespace Gabriel.Cat
             return this.OfType<Tipus>().ToArray<Tipus>();
         }
 
-
+        public void AfegirOReemplaçar(ObjecteSql[] objs)
+        {
+            for (int i = 0; i < objs.Length; i++)
+                if (baseDeDades.ConsultaSQL(objs[i].StringConsultaSql(KeyXifrat)).GetLength(DimensionMatriz.Fila)==1)
+                    Afegir(objs[i]);
+                
+        }
         public void Afegir(ObjecteSql objSql)
         {
             if (objSql != null)
