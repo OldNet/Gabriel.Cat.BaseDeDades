@@ -65,7 +65,7 @@ namespace Gabriel.Cat
             : this(TipusBaseDeDades.MySql, creates, keyXifrat, restaurarTotesDades)
         {
         }
-        protected BaseDeDades BaseDeDades
+        public BaseDeDades BaseDeDades
         {
             get
             {
@@ -95,7 +95,7 @@ namespace Gabriel.Cat
                     catch { }
                 }
                 semaforActualitzacions.Release();
-                KeyXifrat = value;
+                keyXifrat = value;
 
             }
         }
@@ -168,7 +168,7 @@ namespace Gabriel.Cat
                         }
 
                     }
-                    catch
+                    catch(Exception m)
                     {
                     }
                     finally
@@ -374,7 +374,7 @@ namespace Gabriel.Cat
         /// </summary>
         /// <param name="campsXifrats"> diccionari de posicióTaula/TipusCamp </param>
         /// <param name="tabla"></param>
-        protected void DecryptTable(LlistaOrdenada<int, CampXifratTipus> campsXifrats, string[,] tabla)
+        protected void DecryptTable(LlistaOrdenada<int, CampXifratTipus> campsXifrats, string[,] tabla,bool haveHeaders=true)
         {
             CampXifratTipus tipusCamp;
             for (int x = 0, xF = tabla.GetLength(DimensionMatriz.X), yF = tabla.GetLength(DimensionMatriz.Y); x < xF; x++)
@@ -382,16 +382,18 @@ namespace Gabriel.Cat
                 if (campsXifrats.ContainsKey(x))
                 {
                     tipusCamp = campsXifrats[x];
-                    for (int y = 0; y < yF; y++)
+                    for (int y = haveHeaders? 1:0; y < yF; y++)
                     {
                         switch (tipusCamp)
                         {
                             case CampXifratTipus.Double: tabla[x, y] = ObjecteSql.DecryptNumber(double.Parse(tabla[x, y]), KeyXifrat) + ""; break;
-                            case CampXifratTipus.Int: tabla[x, y] = ObjecteSql.DecryptNumber(int.Parse(tabla[x, y]), KeyXifrat) + ""; break;
+                            case CampXifratTipus.Int:
+                                if (String.IsNullOrEmpty(tabla[x, y]))
+                                    tabla[x, y] = "0";
+                                tabla[x, y] = ObjecteSql.DecryptNumber(int.Parse(tabla[x, y]), KeyXifrat) + ""; break;
                             case CampXifratTipus.Long: tabla[x, y] = ObjecteSql.DecryptNumber(long.Parse(tabla[x, y]), KeyXifrat) + ""; break;
-                            case CampXifratTipus.Text: tabla[x, y] = KeyXifrat.Decrypt(tabla[x, y]); break;
-                            case CampXifratTipus.Data: tabla[x, y] = ObjecteSql.DateTimeToStringBdDateTime(ObjecteSql.DecryptDateTime(ObjecteSql.StringBdDateTimeToDateTime(tabla[x, y], BaseDeDades.TipusBD), KeyXifrat), BaseDeDades.TipusBD); break;
-                        }
+                            case CampXifratTipus.Text: tabla[x, y] = ObjecteSql.DecryptString(tabla[x, y],keyXifrat); break;
+                  }
                     }
                 }
             }

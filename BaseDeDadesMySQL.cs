@@ -118,6 +118,7 @@ namespace Gabriel.Cat
             MySqlDataReader readerResult = GetResultadoSentenciaSql(sql);
             List<string[]> comlumsAndRows;
             string[] filaActual;
+            Object currentObj;
             comlumsAndRows = new List<string[]>();
             if (readerResult != null)
             {
@@ -137,8 +138,16 @@ namespace Gabriel.Cat
                         //añado las filas
                         filaActual = new string[readerResult.FieldCount];
 
-                        for (int i = 0; i < readerResult.FieldCount; i++)
-                            filaActual[i] = readerResult.GetValue(i).ToString();
+                        for (int i = 0; i < readerResult.FieldCount; i++)   
+                        	try{                 
+                        	currentObj=readerResult[i];
+                         	if (!(currentObj is DateTime))
+                                    filaActual[i] = currentObj.ToString();
+                                else filaActual[i] = ((DateTime)currentObj).ToLongTimeString();
+                        }catch(Exception e){
+                        	
+                        }
+                      
                         comlumsAndRows.Add(filaActual);
 
                     }

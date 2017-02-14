@@ -57,41 +57,38 @@ namespace Gabriel.Cat
 
         public void VisualitzaSqlResult(string sql)
         {
-
-            VisualitzaTaulaResult(baseDades.ConsultaSQL(sql));
-              
+            if (baseDades.EstaConectada)
+            {
+                VisualitzaTaulaResult(baseDades.ConsultaSQL(sql));
+            }
+            
         }
 
         public void VisualitzaTaulaResult(string[,] tabla)
         {
             DataGridViewRow row;
             string[] camps;
-
-
-            if (baseDades.EstaConectada)
+            dgvDadesTaulaConsultada.Rows.Clear();
+            dgvDadesTaulaConsultada.Columns.Clear();
+            if (tabla != null)
             {
+                camps = tabla.Fila(0);//la primera fila son los nombres de las columnas
 
-                dgvDadesTaulaConsultada.Rows.Clear();
-                dgvDadesTaulaConsultada.Columns.Clear();
-                if (tabla != null)
-                {
-                    camps = tabla.Fila(0);//la primera fila son los nombres de las columnas
-
-                    for (int i = 0; i < camps.Length; i++)
-                        dgvDadesTaulaConsultada.Columns.Add(camps[i], camps[i]);
-                    for (int j = 1; j < tabla.GetLength(DimensionMatriz.Fila); j++)
-                    {//pongo los datos
-                        camps = tabla.Fila(j);
-                        row = new DataGridViewRow();
-                        row.SetValues(camps.ToList<string>());
-                        row.CreateCells(dgvDadesTaulaConsultada, camps);
-                        dgvDadesTaulaConsultada.Rows.Add(row);
-
-                    }
+                for (int i = 0; i < camps.Length; i++)
+                    dgvDadesTaulaConsultada.Columns.Add(camps[i], camps[i]);
+                for (int j = 1; j < tabla.GetLength(DimensionMatriz.Fila); j++)
+                {//pongo los datos
+                    camps = tabla.Fila(j);
+                    row = new DataGridViewRow();
+                    row.SetValues(camps.ToList<string>());
+                    row.CreateCells(dgvDadesTaulaConsultada, camps);
+                    dgvDadesTaulaConsultada.Rows.Add(row);
 
                 }
-                else throw new Exception("la sentencia sql no devuelve filas o es incorrecta");
+
+
             }
+            else throw new Exception("la sentencia sql no devuelve filas o es incorrecta");
         }
     }
 }
