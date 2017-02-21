@@ -263,7 +263,8 @@ namespace Gabriel.Cat
 				throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
 			canvisObj[clauCanvi] = new DadesSql?(new DadesSql(numero, DadesSql.TipusDades.Long));
 		}
-		protected void CanviNumero(Enum enumCaluCanvi, double numero)
+
+        protected void CanviNumero(Enum enumCaluCanvi, double numero)
 		{
 			CanviNumero(enumCaluCanvi.ToString(), numero);
 		}
@@ -355,7 +356,9 @@ namespace Gabriel.Cat
 			if (Baixa != null)
 				Baixa(this);
 		}
-		public void OnActualitzat()
+
+
+        public void OnActualitzat()
 		{
 			if (Actualitzat != null)
 				Actualitzat(this);
@@ -756,16 +759,41 @@ namespace Gabriel.Cat
 			}
 			return strAutoIncrement;
 		}
-		#endregion
-		#region OUTput bd sql
 
-		/// <summary>
-		/// Convierte  la string devuelta por la base de datos con el campo tipo DateTime en DateTime
-		/// </summary>
-		/// <param name="dateTime"></param>
-		/// <param name="tipus"></param>
-		/// <returns></returns>
-		public static DateTime StringBdDateTimeToDateTime(string stringBdDateTime, TipusBaseDeDades tipus)
+        public static string LongStringSQL(TipusBaseDeDades tipusBd)
+        {
+            string strByteArray;
+            switch (tipusBd)
+            {
+                case TipusBaseDeDades.MySql: strByteArray = " text "; break;
+                case TipusBaseDeDades.Acces: strByteArray = " longText "; break;
+                default: strByteArray = null; break;
+            }
+            return strByteArray;
+        }
+
+        public static string ByteArrayStringSql(TipusBaseDeDades tipusBd)
+        {
+            string strByteArray;
+            switch (tipusBd)
+            {
+                case TipusBaseDeDades.MySql: strByteArray = " blob "; break;
+                case TipusBaseDeDades.Acces: strByteArray = " longbinary "; break;
+                default: strByteArray = null; break;
+            }
+            return strByteArray;
+        }
+
+        #endregion
+        #region OUTput bd sql
+
+        /// <summary>
+        /// Convierte  la string devuelta por la base de datos con el campo tipo DateTime en DateTime
+        /// </summary>
+        /// <param name="dateTime"></param>
+        /// <param name="tipus"></param>
+        /// <returns></returns>
+        public static DateTime StringBdDateTimeToDateTime(string stringBdDateTime, TipusBaseDeDades tipus)
 		{
 			return DateTime.Now;//por hacer
 		}

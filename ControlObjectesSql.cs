@@ -206,7 +206,23 @@ namespace Gabriel.Cat
         public void Descarregar(ulong id)
         {
 
-            Descarregar(new ulong[] { id });
+            if (llistaObjsControlats.ContainsKey(id))
+            {
+
+                try
+                {
+                    llistaObjsControlats[id].OnActualitzat();
+                }
+                catch { }
+                try
+                {
+                    llistaObjsControlats[id].Baixa -= Treu;
+
+                }
+                catch { }
+
+                llistaObjsControlats.Remove(id);
+            }
         }
         public void Descarregar(IList<ulong> ids)
         {
@@ -215,23 +231,7 @@ namespace Gabriel.Cat
             semaforActualitzacions.WaitOne();
             for (int i = 0; i < ids.Count; i++)
             {
-                if (llistaObjsControlats.ContainsKey(ids[i]))
-                {
-
-                    try
-                    {
-                        llistaObjsControlats[ids[i]].OnActualitzat();
-                    }
-                    catch { }
-                    try
-                    {
-                        llistaObjsControlats[ids[i]].Baixa -= Treu;
-
-                    }
-                    catch { }
-
-                    llistaObjsControlats.Remove(ids[i]);
-                }
+                Descarregar(ids[i]);
             }
             semaforActualitzacions.Release();
 
@@ -384,7 +384,7 @@ namespace Gabriel.Cat
             {
                 if (campsXifrats.ContainsKey(x))
                 {
-                    tipusCamp = campsXifrats[x];
+                    tipusCamp = campsXifrats.GetValue(x);
                     for (int y = haveHeaders? 1:0; y < yF; y++)
                     {
                         switch (tipusCamp)
