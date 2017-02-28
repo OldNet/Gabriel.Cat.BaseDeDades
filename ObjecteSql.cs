@@ -19,17 +19,22 @@ namespace Gabriel.Cat
 	public enum CampXifratTipus
 	{
 		Text,
-		Int,
+        Byte,
+        Short,
+        Int,
 		Long,
 		Double
 	}
 	public abstract class ObjecteSql : IComparable<ObjecteSql>
 	{
-		private struct DadesSql
+		protected struct DadesSql
 		{
 			public enum TipusDades
 			{
 				Text,
+                Bool,
+                Byte,
+                Short,
 				Int,
 				Long,
 				Double,
@@ -231,7 +236,18 @@ namespace Gabriel.Cat
 		{
 			return canvisObj.ContainsKey(clauCanvi);
 		}
-		protected void CanviNumero(Enum enumCaluCanvi, int numero)
+
+        protected void CanviBool(Enum enumCaluCanvi, bool valorBolea)
+        {
+            CanviBool(enumCaluCanvi.ToString(), valorBolea);
+        }
+        protected void CanviBool(string clauCanvi, bool valorBolea)
+        {
+
+            Canvi(clauCanvi, valorBolea, DadesSql.TipusDades.Bool);
+        }
+
+        protected void CanviNumero(Enum enumCaluCanvi, int numero)
 		{
 			CanviNumero(enumCaluCanvi.ToString(), numero);
 		}
@@ -243,36 +259,31 @@ namespace Gabriel.Cat
 		protected void CanviNumero(string clauCanvi, int numero)
 		{
 
-			if (!ExisteixCanvi(clauCanvi))
-				throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
-			canvisObj[clauCanvi] = new DadesSql?(new DadesSql(numero, DadesSql.TipusDades.Int));
+            Canvi(clauCanvi, numero, DadesSql.TipusDades.Int);
 		}
-		protected void CanviNumero(Enum enumCaluCanvi, long numero)
-		{
-			CanviNumero(enumCaluCanvi.ToString(), numero);
-		}
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="clauCanvi"></param>
-		/// <param name="numero"></param>
-		protected void CanviNumero(string clauCanvi, long numero)
+	
+        protected void CanviNumero(Enum enumCaluCanvi, long numero)
+        {
+            CanviNumero(enumCaluCanvi.ToString(), numero);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="clauCanvi"></param>
+        /// <param name="numero"></param>
+        protected void CanviNumero(string clauCanvi, long numero)
 		{
 
-			if (!ExisteixCanvi(clauCanvi))
-				throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
-			canvisObj[clauCanvi] = new DadesSql?(new DadesSql(numero, DadesSql.TipusDades.Long));
-		}
+            Canvi(clauCanvi, numero, DadesSql.TipusDades.Long);
+        }
+
 
         protected void CanviNumero(Enum enumCaluCanvi, double numero)
 		{
 			CanviNumero(enumCaluCanvi.ToString(), numero);
 		}
 
-        public static int CalculaLongitudStringEncriptada(int length)
-        {
-            return length *4;
-        }
+    
 
         /// <summary>
         /// 
@@ -282,19 +293,31 @@ namespace Gabriel.Cat
         protected void CanviNumero(string clauCanvi, double numero)
 		{
 
-			if (!ExisteixCanvi(clauCanvi))
-				throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
-			canvisObj[clauCanvi] = new DadesSql?(new DadesSql(numero, DadesSql.TipusDades.Double));
-		}
-		protected void CanviString(Enum enumCaluCanvi, string text)
+            Canvi(clauCanvi, numero, DadesSql.TipusDades.Double);
+        }
+        protected void CanviNumero(Enum enumCaluCanvi, byte numero)
+        {
+            CanviNumero(enumCaluCanvi.ToString(), numero);
+        }
+        protected void CanviNumero(string clauCanvi, byte numero)
+        {
+            Canvi(clauCanvi, numero, DadesSql.TipusDades.Byte);
+        }
+        protected void CanviNumero(Enum enumCaluCanvi, short numero)
+        {
+            CanviNumero(enumCaluCanvi.ToString(), numero);
+        }
+        protected void CanviNumero(string clauCanvi, short numero)
+        {
+            Canvi(clauCanvi, numero, DadesSql.TipusDades.Short);
+        }
+        protected void CanviString(Enum enumCaluCanvi, string text)
 		{
 			CanviString(enumCaluCanvi.ToString(), text);
 		}
 		protected void CanviString(string clauCanvi, string text)
 		{
-			if (!ExisteixCanvi(clauCanvi))
-				throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
-			canvisObj[clauCanvi] = new DadesSql?(new DadesSql(text, DadesSql.TipusDades.Text));
+            Canvi(clauCanvi, text, DadesSql.TipusDades.Text);
 		}
 		protected void CanviData(Enum enumCaluCanvi, DateTime data)
 		{
@@ -321,14 +344,19 @@ namespace Gabriel.Cat
 		/// <param name="data">ticks</param>
 		protected void CanviData(string clauCanvi, long ticks)
 		{
-			if (!ExisteixCanvi(clauCanvi))
-				throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
 			if (ticks < 0)
 				throw new ArgumentException();
-			canvisObj[clauCanvi] = new DadesSql?(new DadesSql(ticks, DadesSql.TipusDades.Data));
+            Canvi(clauCanvi, ticks, DadesSql.TipusDades.Data);
 
 		}
-		protected void CanviTimeSpan(Enum enumCaluCanvi, TimeSpan temps)
+        protected void Canvi(string clauCanvi, object dades, DadesSql.TipusDades tipus)
+        {
+
+            if (!ExisteixCanvi(clauCanvi))
+                throw new Exception("Error la clau:" + clauCanvi + " no s'ha donat d'alta");
+            canvisObj[clauCanvi] = new DadesSql?(new DadesSql(dades, tipus));
+        }
+        protected void CanviTimeSpan(Enum enumCaluCanvi, TimeSpan temps)
 		{
 			CanviTimeSpan(enumCaluCanvi.ToString(), temps);
 		}
@@ -403,7 +431,13 @@ namespace Gabriel.Cat
 				iguals = other.Taula == Taula && other.PrimaryKey == PrimaryKey;
 			return iguals;
 		}
+
+        public static int CalculaLongitudStringEncriptada(int length)
+        {
+            return length * 4;
+        }
         #region Conversions
+
         public static long DoubleToLong(double valor)
         {
             return Serializar.ToLong(Serializar.GetBytes(valor));
@@ -442,64 +476,105 @@ namespace Gabriel.Cat
 			StringBuilder strUpdate = new StringBuilder();
 			StringBuilder strAux = new StringBuilder();
 			List<string> canvis;
+            KeyValuePair<string, DadesSql?> campValor;
 
-			if (ComprovacioSiEsPot()) {
+            if (ComprovacioSiEsPot()) {
 				canvis = new List<string>();
-				foreach (KeyValuePair<string, DadesSql?> campValor in canvisObj)
-					if (campValor.Value != null) {
+                    for (int i = 0; i < canvisObj.Count; i++)
+                    {
+                        campValor = canvisObj[i];
+                        if (campValor.Value != null)
+                        {
 
-					if (campValor.Key != "Id") {
-						strAux.Append(campValor.Key);
-						strAux.Append("=");
-						switch (campValor.Value.Value.Tipus) {
-							case DadesSql.TipusDades.Data:
-								strAux.Append(DateTimeToStringSQL(tipusBD, new DateTime((long)campValor.Value.Value.Dades)));
-								break;
-							case DadesSql.TipusDades.Double:
-								if (campsXifrats.ContainsKey(campValor.Key)) {
-									strAux.Append(ParseDoubleNetToBd( EncryptNumero((double)campValor.Value.Value.Dades, keyXifrat)));
-								} else
-									strAux.Append(ParseDoubleNetToBd((double)campValor.Value.Value.Dades));
-								break;
+                            if (campValor.Key != "Id")
+                            {
+                                strAux.Append(campValor.Key);
+                                strAux.Append("=");
+                                switch (campValor.Value.Value.Tipus)
+                                {
+                                    case DadesSql.TipusDades.Data:
+                                        strAux.Append(DateTimeToStringSQL(tipusBD, new DateTime((long)campValor.Value.Value.Dades)));
+                                        break;
+                                    case DadesSql.TipusDades.Double:
+                                        if (campsXifrats.ContainsKey(campValor.Key))
+                                        {
+                                            strAux.Append(ParseDoubleNetToBd(EncryptNumero((double)campValor.Value.Value.Dades, keyXifrat)));
+                                        }
+                                        else
+                                            strAux.Append(ParseDoubleNetToBd((double)campValor.Value.Value.Dades));
+                                        break;
 
-							case DadesSql.TipusDades.Int:
-								if (campsXifrats.ContainsKey(campValor.Key)) {
-									strAux.Append(EncryptNumero((int)campValor.Value.Value.Dades, keyXifrat));
-								} else
-									strAux.Append(campValor.Value.Value.Dades + "");
-								break;
-							case DadesSql.TipusDades.Long:
-								if (campsXifrats.ContainsKey(campValor.Key)) {
-									strAux.Append(EncryptNumero((long)campValor.Value.Value.Dades, keyXifrat));
-								} else
-									strAux.Append(campValor.Value.Value.Dades + "");
-								break;
-							case DadesSql.TipusDades.Text:
-								if (campValor.Value.Value.Dades != null) {
-									strAux.Append("'");
-									if (campsXifrats.ContainsKey(campValor.Key)) {
-										strAux.Append(EncryptString((string)campValor.Value.Value.Dades,keyXifrat));
-									} else
-										strAux.Append((string)campValor.Value.Value.Dades);
-									strAux.Append("'");
-								} else
-									strAux.Append("null");
-								break;
+                                    case DadesSql.TipusDades.Int:
+                                        if (campsXifrats.ContainsKey(campValor.Key))
+                                        {
+                                            strAux.Append(EncryptNumero((int)campValor.Value.Value.Dades, keyXifrat));
+                                        }
+                                        else
+                                            strAux.Append(campValor.Value.Value.Dades + "");
+                                        break;
+                                    case DadesSql.TipusDades.Long:
+                                        if (campsXifrats.ContainsKey(campValor.Key))
+                                        {
+                                            strAux.Append(EncryptNumero((long)campValor.Value.Value.Dades, keyXifrat));
+                                        }
+                                        else
+                                            strAux.Append(campValor.Value.Value.Dades + "");
+                                        break;
+                                    case DadesSql.TipusDades.Text:
+                                        if (campValor.Value.Value.Dades != null)
+                                        {
+                                            strAux.Append("'");
+                                            if (campsXifrats.ContainsKey(campValor.Key))
+                                            {
+                                                strAux.Append(EncryptString((string)campValor.Value.Value.Dades, keyXifrat));
+                                            }
+                                            else
+                                                strAux.Append((string)campValor.Value.Value.Dades);
+                                            strAux.Append("'");
+                                        }
+                                        else
+                                            strAux.Append("null");
+                                        break;
+                                    case DadesSql.TipusDades.Bool:
+                                        strAux.Append(((bool)campValor.Value.Value.Dades) ? BoolTrueSql(tipusBD) : 0);
+                                        break;
+                                    case DadesSql.TipusDades.Byte:
 
-						}
+                                        if (campsXifrats.ContainsKey(campValor.Key))
+                                        {
+                                            strAux.Append(EncryptNumero((byte)campValor.Value.Value.Dades, keyXifrat));
+                                        }
+                                        else
+                                            strAux.Append((byte)campValor.Value.Value.Dades);
+                                        break;
+                                    case DadesSql.TipusDades.Short:
 
-					} else {
-						strAux.Append(CampPrimaryKey);
-						strAux.Append("=");
-						if (campsXifrats.ContainsKey(CampPrimaryKey)) {
-							strAux.Append(keyXifrat.Encrypt(primaryKeyAnt));
-						} else
-							strAux.Append(primaryKeyAnt);
-					}
+                                        if (campsXifrats.ContainsKey(campValor.Key))
+                                        {
+                                            strAux.Append(EncryptNumero((short)campValor.Value.Value.Dades, keyXifrat));
+                                        }
+                                        else
+                                            strAux.Append((short)campValor.Value.Value.Dades);
+                                        break;
+                                }
 
-					canvis.Add(strAux.ToString());
-					strAux.Clear();
-				}
+                            }
+                            else
+                            {
+                                strAux.Append(CampPrimaryKey);
+                                strAux.Append("=");
+                                if (campsXifrats.ContainsKey(CampPrimaryKey))
+                                {
+                                    strAux.Append(keyXifrat.Encrypt(primaryKeyAnt));
+                                }
+                                else
+                                    strAux.Append(primaryKeyAnt);
+                            }
+
+                            canvis.Add(strAux.ToString());
+                            strAux.Clear();
+                        }
+                    }
 				if (canvis.Count > 0) {
 					strUpdate.Append("update ");
 					strUpdate.Append(taula);
@@ -589,6 +664,18 @@ namespace Gabriel.Cat
 				throw new ArgumentNullException("keyXifrat");
 			return Serializar.ToLong(keyXifrat.Encrypt(Serializar.GetBytes(numero)));
 		}
+        public static byte EncryptNumero(byte numero, Key keyXifrat)
+        {
+            if (keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+            return keyXifrat.Encrypt(Serializar.GetBytes(numero))[0];
+        }
+        public static short EncryptNumero(short numero, Key keyXifrat)
+        {
+            if (keyXifrat == null)
+                throw new ArgumentNullException("keyXifrat");
+            return Serializar.ToShort(keyXifrat.Encrypt(Serializar.GetBytes(numero)));
+        }
         public static int EncryptNumero(int numero, Key keyXifrat)
 		{
 			if (keyXifrat == null)
@@ -633,6 +720,7 @@ namespace Gabriel.Cat
             return num.ToString().Replace(',', '.');
         }
         #endregion
+    
         #region Format SQL
         public static string DoubleToString(TipusBaseDeDades tipusBD, int parteEntera = 38, int parteDecimal = 15)
 		{
@@ -684,6 +772,45 @@ namespace Gabriel.Cat
 			}
 			return dateTimeToStringSQL;
 		}
+        public static string ByteStringCreateSql(TipusBaseDeDades tipus)
+        {
+            string byteString;
+            switch (tipus)
+            {
+                case TipusBaseDeDades.MySql: byteString = " TinyInt "; break;
+                case TipusBaseDeDades.Acces: byteString = " UNSIGNED BYTE "; break;
+                default: throw new ArgumentOutOfRangeException();
+            }
+            return byteString;
+        }
+        public static int BoolTrueSql(TipusBaseDeDades tipus)
+        {
+            return tipus != TipusBaseDeDades.Acces ? 1 : -1;
+        }
+        public static int BoolFalseSql(TipusBaseDeDades tipus)
+        {
+            return 0;
+        }
+        public static string BooleanStringValueSql(bool value,TipusBaseDeDades tipus)
+        {
+            string str;
+            if (value)
+                str =" "+ BoolTrueSql(tipus)+" ";
+            else str = " 0 ";
+            return str;
+        }
+
+        public static string BooleanStringCreateSql(TipusBaseDeDades tipus)
+        {
+            string boolString;
+            switch(tipus)
+            {
+                case TipusBaseDeDades.MySql: boolString = " Bool "; break;
+                case TipusBaseDeDades.Acces:boolString = " bit ";break;
+                default:throw new ArgumentOutOfRangeException();
+            }
+            return boolString;
+        }
 		public static string StringAutoIncrement(TipusBaseDeDades tipusBD)
 		{
 			return StringAutoIncrement(tipusBD, typeof(long));
