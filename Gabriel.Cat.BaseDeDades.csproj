@@ -59,25 +59,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BaseDeDades.cs" />
-    <Compile Include="BaseDeDadesAcces.cs" />
-    <Compile Include="BaseDeDadesMySQL.cs" />
-    <Compile Include="ControlObjectesSql.cs" />
-    <Compile Include="Convertir\Convertir.cs" />
-    <Compile Include="FitxerBD.cs" />
-    <Compile Include="ObjecteSql.cs" />
-    <Compile Include="ObjecteSqlIdAuto.cs" />
+    <Compile Include="DataBase.cs" />
+    <Compile Include="IDataBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="VisualitzaTaula.cs" />
-    <Compile Include="VisualitzaTaula.Designer.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="VisualitzaTaula.resx">
-      <DependentUpon>VisualitzaTaula.cs</DependentUpon>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Convertir" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
