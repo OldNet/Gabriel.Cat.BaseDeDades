@@ -11,10 +11,10 @@ namespace Gabriel.Cat.BaseDeDades
 	/// <summary>
 	/// Se implementa para decir que se obtendrán los datos de forma postuma(cuando sea necesaria)
 	/// </summary>
-	public interface IDataBase
+	public interface IDataBase:IComparable
 	{
 	    string IdBD
-	    {get;}
+	    {get;set;}
 	    DateTime UltimaVersionBD
 	    {get;set;}
 	}

@@ -59,8 +59,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Atributos.cs" />
     <Compile Include="DataBase.cs" />
+    <Compile Include="Exceptions.cs" />
     <Compile Include="IDataBase.cs" />
+    <Compile Include="IOptimitzeUpdate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
