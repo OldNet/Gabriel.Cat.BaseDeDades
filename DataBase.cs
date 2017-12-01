@@ -6,6 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using Gabriel.Cat.Seguretat;
 using Gabriel.Cat.Extension;
@@ -16,19 +17,24 @@ namespace Gabriel.Cat.BaseDeDades
 	/// </summary>
 	public abstract class DataBase:IComparable,IComparable<DataBase>
 	{
-		
+		public static bool LoadTableAtFristUsageOfList=true;
+		public static bool OnLoadAndExistObjSQLFirst=false;//no se que nombre ponerle...
 		Key keyGenerica;
 		LlistaOrdenada<Type,Key> keyTabla;
 		LlistaOrdenada<Type,LlistaOrdenada<string,Key>> keyCampoTabla;
 		LlistaOrdenada<Type,string> dicNombreTabla;
 		LlistaOrdenada<Type,string> dicCampoPrimaryKey;
 		LlistaOrdenada<Type,LlistaOrdenada<IDataBase>> objetosBD;
+		LlistaOrdenada<Type,LlistaOrdenada<string,string>> dicNombreSQLAPropiedad;
+		LlistaOrdenada<Type,LlistaOrdenada<string,string>> dicPropiedadANombreSQL;
 		bool usarKeyGenerica;
 		bool usarKeyTabla;
 		
 		string loginDataBase;
 		public DataBase()
 		{
+			dicNombreSQLAPropiedad=new LlistaOrdenada<Type, LlistaOrdenada<string, string>>();
+			dicPropiedadANombreSQL=new LlistaOrdenada<Type, LlistaOrdenada<string, string>>();
 			objetosBD=new LlistaOrdenada<Type, LlistaOrdenada<IDataBase>>();
 			dicNombreTabla=new LlistaOrdenada<Type, string>();
 			dicCampoPrimaryKey=new LlistaOrdenada<Type, string>();
@@ -107,10 +113,13 @@ namespace Gabriel.Cat.BaseDeDades
 					objsTabla.Added+=AñadirObjeto;
 					objsTabla.Removed+=QuitarObjeto;
 					objetosBD.Add(tabla,objsTabla);
+					if(LoadTableAtFristUsageOfList)
+						objsTabla.AddRange(ILoad(tabla));
 					
 				}
 				else
 					objsTabla=objetosBD[tabla];
+				
 				return objsTabla;
 			}
 		}
@@ -145,6 +154,7 @@ namespace Gabriel.Cat.BaseDeDades
 		}
 		public  void Add(IDataBase obj)
 		{
+			//tener en cuenta los atributos SQLIgnore y SQLName
 		}
 		public void Add(IList<IDataBase> objs)
 		{
@@ -189,7 +199,7 @@ namespace Gabriel.Cat.BaseDeDades
 			else
 			{
 				update=new List<KeyValuePair<string,string>>();
-				//cojo todos los campos
+				//cojo todos los campos tener en cuenta SQLName y SQLIgnore
 			}
 			if(update.Count>0){
 				strUpdate.Append("update ");
@@ -240,13 +250,33 @@ namespace Gabriel.Cat.BaseDeDades
 		}
 		public LlistaOrdenada<IDataBase> Load(Type table, bool fullLoad = false)
 		{
+			LlistaOrdenada<IDataBase> objetos;
+			IList<IDataBase> objsBD;
+			bool ponerNuevos=objetosBD.ContainsKey(table);
+			objetos=this[table];
+			if(ponerNuevos){
+				objsBD=ILoad(table,fullLoad);
+				for(int i=0;i<objsBD.Count;i++)
+				{
+					if(OnLoadAndExistObjSQLFirst)
+					{
+						objetos.AddOrReplace(objsBD[i]);
+					}else if(!objetos.ContainsKey(objsBD[i]))
+						objetos.Add(objsBD[i]);
+				}
+			}
+			return objetos;
+		}
+
+		IList<IDataBase> ILoad(Type table, bool fullLoad = false)
+		{
 			const int PRIMEROBJETO=1;//en la fila 0 va el nombre de las columnas
 			const int PRIMARYKETCOLUMN=0;
 
 			string[,] tablaIdsObjetos;
 			IDataBase objAct;
 			StringBuilder strSelect=new StringBuilder();
-			LlistaOrdenada<IDataBase> objetos;
+			List<IDataBase> objetos=new List<IDataBase>();
 			strSelect.Append("Select ");
 			strSelect.Append(GetPrimaryKeyColumn(table));
 			strSelect.Append(" from ");
@@ -258,16 +288,14 @@ namespace Gabriel.Cat.BaseDeDades
 			{
 				objAct=(IDataBase)Activator.CreateInstance(table);
 				objAct.IdBD=tablaIdsObjetos[PRIMARYKETCOLUMN,y];
-				if(!objetos.ContainsKey(objAct))
-					objetos.Add(objAct);
+				objetos.Add(objAct);
 			}
 			//si los tengo que acabar de cargar lo hago
 			if (fullLoad)
-				Load(objetos.GetValues());
+				Load(objetos);
 			
-			return this[table];
+			return objetos;
 		}
-
 		public string GetTableName(Type tabla)
 		{
 			if(!dicNombreTabla.ContainsKey(tabla))
@@ -321,8 +349,37 @@ namespace Gabriel.Cat.BaseDeDades
 		}
 
 		string GetPropertyName(Type type, string nombreColumna)
-		{
-			throw new NotImplementedException();
+		{//mirar que sirva para el otro sentido...y que se busquen los dos para aprovechar la busqueda y solo hacerla una sola vez.
+			System.Reflection.PropertyInfo[] propiedades;
+			IEnumerable<CustomAttributeData> atributosPropiedad;
+			string nombrePropiedad=null;
+			bool encontradoAtributo=false;
+			//si una propiedad tiene el atributo SQLName=nombreColumna o si encontramos el nombre de la propiedad
+
+			if(!dicNombreSQLAPropiedad.ContainsKey(type))
+				dicNombreSQLAPropiedad.Add(type,new LlistaOrdenada<string, string>());
+			if(!dicNombreSQLAPropiedad[type].ContainsKey(nombreColumna)){
+				propiedades=type.GetProperties();
+				for(int i=0;i<propiedades.Length&&!encontradoAtributo;i++)
+				{
+					atributosPropiedad=propiedades[i].CustomAttributes;
+					atributosPropiedad.WhileEach((atributo)=>{
+					                             	bool continuar=atributo is SQLName;//si encuentro este atributo ya puedo salir :)
+					                             	if(continuar){
+					                             		encontradoAtributo=atributo.ToString().Equals(nombreColumna);
+					                             		
+					                             	}
+					                             	return continuar;
+					                             });
+					if(encontradoAtributo||propiedades[i].Name.Equals(nombreColumna))
+						nombrePropiedad=propiedades[i].Name;
+					
+				}
+				dicNombreSQLAPropiedad[type].Add(nombreColumna,nombrePropiedad);
+				
+			}else nombrePropiedad=dicNombreSQLAPropiedad[type][nombreColumna];
+			return nombrePropiedad;
+			
 		}
 
 		object GetPropertyValue(Type type, string nombreColumna, string valorColumna)
