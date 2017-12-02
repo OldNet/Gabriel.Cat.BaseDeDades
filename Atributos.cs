@@ -9,9 +9,7 @@ using System;
 namespace Gabriel.Cat.BaseDeDades
 {
 
-	/// <summary>
-	/// Tiene más importancia que una propiedad con el mismo nombre(El sql)
-	/// </summary>
+	[AttributeUsage(AttributeTargets.Property|AttributeTargets.Class)]
 	public class SQLName:System.Attribute
 	{
 		string name;
@@ -31,8 +29,11 @@ namespace Gabriel.Cat.BaseDeDades
 		}
 
 	}
+	[AttributeUsage(AttributeTargets.Property)]
 	public class PrimaryKey:System.Attribute
 	{}
+	[AttributeUsage(AttributeTargets.Property)]
 	public class SQLIgnore:System.Attribute
 	{}
+
 }

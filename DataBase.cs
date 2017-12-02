@@ -6,6 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using Gabriel.Cat.Seguretat;
@@ -24,6 +25,7 @@ namespace Gabriel.Cat.BaseDeDades
 		LlistaOrdenada<Type,LlistaOrdenada<string,Key>> keyCampoTabla;
 		LlistaOrdenada<Type,string> dicNombreTabla;
 		LlistaOrdenada<Type,string> dicCampoPrimaryKey;
+		LlistaOrdenada<Type,string> dicPropiedadPrimaryKey;
 		LlistaOrdenada<Type,LlistaOrdenada<IDataBase>> objetosBD;
 		LlistaOrdenada<Type,LlistaOrdenada<string,string>> dicNombreSQLAPropiedad;
 		LlistaOrdenada<Type,LlistaOrdenada<string,string>> dicPropiedadANombreSQL;
@@ -33,6 +35,7 @@ namespace Gabriel.Cat.BaseDeDades
 		string loginDataBase;
 		public DataBase()
 		{
+			dicPropiedadPrimaryKey=new LlistaOrdenada<Type, string>();
 			dicNombreSQLAPropiedad=new LlistaOrdenada<Type, LlistaOrdenada<string, string>>();
 			dicPropiedadANombreSQL=new LlistaOrdenada<Type, LlistaOrdenada<string, string>>();
 			objetosBD=new LlistaOrdenada<Type, LlistaOrdenada<IDataBase>>();
@@ -231,11 +234,20 @@ namespace Gabriel.Cat.BaseDeDades
 
 		string GetPrimaryKeyValue(IDataBase obj)
 		{
-			throw new NotImplementedException();
+			Type tipo=obj.GetType();
+			object value;
+			
+			LoadType(tipo);
+			value= obj.GetPropteryValue(dicPropiedadPrimaryKey[tipo]);
+			if(value is string)
+				value="\""+value+"\"";
+			return value.ToString();
+			
 		}
 		string GetColumnName(Type tipo, string nombrePropiedad)
 		{
-			throw new NotImplementedException();
+			LoadType(tipo);
+			return dicNombreSQLAPropiedad[tipo][nombrePropiedad];
 		}
 		string SetColumnValue(Type tipo, string nombrePropiedad, string valorPropiedad)
 		{
@@ -296,21 +308,94 @@ namespace Gabriel.Cat.BaseDeDades
 			
 			return objetos;
 		}
+
+		void LoadType(Type type)
+		{
+			const UsoPropiedad USO=UsoPropiedad.Get|UsoPropiedad.Set;
+			//mirar que sirva para el otro sentido...y que se busquen los dos para aprovechar la busqueda y solo hacerla una sola vez.
+			PropiedadTipo[] propiedades=type.GetPropiedades();
+			SortedList<Type,object> tiposSoportados=GetSuportedTypes();
+			PrimaryKey primaryKey;
+			SQLName sqlName;
+			//si una propiedad tiene el atributo SQLName=nombreColumna o si encontramos el nombre de la propiedad
+			if(!dicNombreTabla.ContainsKey(type)){
+				//inicializo los diccionarios
+				dicNombreSQLAPropiedad.Add(type,new LlistaOrdenada<string, string>());
+				dicPropiedadANombreSQL.Add(type,new LlistaOrdenada<string, string>());
+				
+				//nombreTabla
+
+				sqlName=type.GetCustomAttributes(true).OfType<SQLName>().FirstOrDefault();
+				if(sqlName!=null)
+					dicNombreTabla.Add(type,sqlName.Name);
+				else{
+					//si no se le asigna a la clase un SQLName se le pone el de la clase
+					dicNombreTabla.Add(type,type.Name);
+				}
+				//PrimaryKey//Mas adelante si lo necesito(mirar si hay más de una columna)
+				//Coger propiedades sin el SQLIgnore compatibles (IDataBase,IList<IDataBase>,tipoBasico,IList<tipoBasico>)
+				for(int i=0;i<propiedades.Length;i++)
+				{
+					
+					if(propiedades[i].Uso==USO)
+					{
+						if(tiposSoportados.ContainsKey(propiedades[i].Tipo))
+						{
+							//si tiene al atributo ignore no continuo
+							if (!propiedades[i].Atributos.OfType<SQLIgnore>().Any()) {
+								sqlName = null;
+								for (int j = 0; j < propiedades[i].Atributos.Length; j++) {
+									
+									primaryKey = propiedades[i].Atributos[j] as PrimaryKey;
+									if (primaryKey != null) {
+										dicPropiedadPrimaryKey.Add(type, propiedades[i].Nombre);
+									} else {
+										sqlName = propiedades[i].Atributos[j] as SQLName;
+										if (sqlName != null) {
+											dicNombreSQLAPropiedad[type].Add(sqlName.Name, propiedades[i].Nombre);
+											dicPropiedadANombreSQL[type].Add(propiedades[i].Nombre, sqlName.Name);
+										}
+										
+									}
+								}
+								if (!dicPropiedadANombreSQL[type].ContainsKey(propiedades[i].Nombre)) {
+									//el nombre es el nombre de la propiedad :D
+									dicNombreSQLAPropiedad[type].Add(propiedades[i].Nombre, propiedades[i].Nombre);
+									dicPropiedadANombreSQL[type].Add(propiedades[i].Nombre, propiedades[i].Nombre);
+								}
+								
+							}
+							if(!dicPropiedadPrimaryKey.ContainsKey(type)){
+								dicPropiedadPrimaryKey.Add(type,"IdBD");//la propiedad
+								dicCampoPrimaryKey.Add(type,"Id");//SQL
+							}
+							else
+								dicCampoPrimaryKey.Add(type,dicPropiedadANombreSQL[type][dicPropiedadPrimaryKey[type]]);
+						}
+					}
+				}
+			}
+			
+		}
+
+		SortedList<Type, object> GetSuportedTypes()
+		{
+			SortedList<Type,object> dic=GetBasicTypes();
+			dic.Add(typeof(IDataBase),"IDataBase");
+			dic.Add(typeof(IList<IDataBase>),"IList<IDataBase>");
+			return dic;
+		}
+		protected abstract SortedList<Type, object> GetBasicTypes();
+		
 		public string GetTableName(Type tabla)
 		{
-			if(!dicNombreTabla.ContainsKey(tabla))
-			{
-				//obtengo el nombre de la tabla
-			}
+			LoadType(tabla);
 			return dicNombreTabla[tabla];
 		}
 
 		public string GetPrimaryKeyColumn(Type tabla)
 		{
-			if(!dicCampoPrimaryKey.ContainsKey(tabla))
-			{
-				//obtengo el campoPrimaryKey de la tabla
-			}
+			LoadType(tabla);
 			return dicCampoPrimaryKey[tabla];
 		}
 		/// <summary>
@@ -349,37 +434,9 @@ namespace Gabriel.Cat.BaseDeDades
 		}
 
 		string GetPropertyName(Type type, string nombreColumna)
-		{//mirar que sirva para el otro sentido...y que se busquen los dos para aprovechar la busqueda y solo hacerla una sola vez.
-			System.Reflection.PropertyInfo[] propiedades;
-			IEnumerable<CustomAttributeData> atributosPropiedad;
-			string nombrePropiedad=null;
-			bool encontradoAtributo=false;
-			//si una propiedad tiene el atributo SQLName=nombreColumna o si encontramos el nombre de la propiedad
-
-			if(!dicNombreSQLAPropiedad.ContainsKey(type))
-				dicNombreSQLAPropiedad.Add(type,new LlistaOrdenada<string, string>());
-			if(!dicNombreSQLAPropiedad[type].ContainsKey(nombreColumna)){
-				propiedades=type.GetProperties();
-				for(int i=0;i<propiedades.Length&&!encontradoAtributo;i++)
-				{
-					atributosPropiedad=propiedades[i].CustomAttributes;
-					atributosPropiedad.WhileEach((atributo)=>{
-					                             	bool continuar=atributo is SQLName;//si encuentro este atributo ya puedo salir :)
-					                             	if(continuar){
-					                             		encontradoAtributo=atributo.ToString().Equals(nombreColumna);
-					                             		
-					                             	}
-					                             	return continuar;
-					                             });
-					if(encontradoAtributo||propiedades[i].Name.Equals(nombreColumna))
-						nombrePropiedad=propiedades[i].Name;
-					
-				}
-				dicNombreSQLAPropiedad[type].Add(nombreColumna,nombrePropiedad);
-				
-			}else nombrePropiedad=dicNombreSQLAPropiedad[type][nombreColumna];
-			return nombrePropiedad;
-			
+		{
+			LoadType(type);
+			return dicPropiedadANombreSQL[type][nombreColumna];
 		}
 
 		object GetPropertyValue(Type type, string nombreColumna, string valorColumna)
