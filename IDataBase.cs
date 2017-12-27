@@ -13,9 +13,8 @@ namespace Gabriel.Cat.BaseDeDades
 	/// </summary>
 	public interface IDataBase:IComparable
 	{
-	    string IdBD
-	    {get;set;}
-	    DateTime UltimaVersionBD
-	    {get;set;}
+		string GetIdBD(DataBase db);
+		void SetIdBD(DataBase db,string idBD);
+		DateTime UltimaVersionBD(DataBase db);
 	}
 }

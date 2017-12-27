@@ -272,7 +272,7 @@ namespace Gabriel.Cat.BaseDeDades
 				{
 					if(OnLoadAndExistObjSQLFirst)
 					{
-						objetos.AddOrReplace(objsBD[i]);
+						objetos.AddOrReplace(objsBD[i].GetIdBD(this),objsBD[i]);
 					}else if(!objetos.ContainsKey(objsBD[i]))
 						objetos.Add(objsBD[i]);
 				}
@@ -299,7 +299,7 @@ namespace Gabriel.Cat.BaseDeDades
 			for(int y=PRIMEROBJETO,yFin=tablaIdsObjetos.GetLength(DimensionMatriz.Fila);y<yFin;y++)
 			{
 				objAct=(IDataBase)Activator.CreateInstance(table);
-				objAct.IdBD=tablaIdsObjetos[PRIMARYKETCOLUMN,y];
+				objAct.SetIdBD(this,tablaIdsObjetos[PRIMARYKETCOLUMN,y]);
 				objetos.Add(objAct);
 			}
 			//si los tengo que acabar de cargar lo hago
