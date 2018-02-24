@@ -344,7 +344,7 @@ namespace Gabriel.Cat.BaseDeDades
 							//si tiene al atributo ignore no continuo
 							if (!propiedades[i].Atributos.OfType<SQLIgnore>().Any()) {
 								sqlName = null;
-								for (int j = 0; j < propiedades[i].Atributos.Length; j++) {
+								for (int j = 0; j < propiedades[i].Atributos.Count; j++) {
 									
 									primaryKey = propiedades[i].Atributos[j] as PrimaryKey;
 									if (primaryKey != null) {
