@@ -12,7 +12,7 @@ using System.Text;
 using Gabriel.Cat.Seguretat;
 using Gabriel.Cat.Extension;
 namespace Gabriel.Cat.BaseDeDades
-{
+{//quizas se tiene que rehacer...
 	/// <summary>
 	/// Description of DataBase.
 	/// </summary>
