@@ -31,7 +31,10 @@ Puntos a Hacer:
   Abtraer al maximo para que los conectores sean lo mas simples de implementar :D
   
   Poder descargar los objetos de la ram y que se queden con el minimo.
+  Poder descargar partes de objetos.
+  Poder cargar partes de objetos.
   
+  Poder cargar tablas con tipos autogenerados o uno generico que tenga las partes y permita el tratamiento de los objetos :)
   
   
   
