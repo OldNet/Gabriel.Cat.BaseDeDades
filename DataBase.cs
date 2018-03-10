@@ -46,6 +46,8 @@ namespace Gabriel.Cat.BaseDeDades
 			keyTabla = new LlistaOrdenada<Type, Key>();
 			keyTabla.Updated += ContraseñaTablaActualizado;//mirar si incluye cuando se añade y se elimina
 		}
+
+		
 		/// <summary>
 		/// Si es True cuando se cifre el campo se incluirá además el cifrado generico, solo se tendrá en cuenta si hay un cifrado para el campo,sino se usará si hay el cifrado generico asignado;un campo con el atributo NoCifrado no se tendrá en cuenta.
 		/// </summary>
