@@ -56,7 +56,8 @@ namespace Gabriel.Cat
             if (fitxers != null)
             {
                 foreach (FitxerBD archiu in fitxers)
-                    stringAll.Append(archiu.ToStringBD()+ CARACTERSERPARADORARCHIUSBD);
+                    stringAll.Append(archiu.ToStringBD());
+                    stringAll.Append(CARACTERSERPARADORARCHIUSBD);
                 stringAll.Remove(1, stringAll.Length - 1);
             }
             return stringAll.ToString();
